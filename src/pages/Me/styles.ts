@@ -1,10 +1,10 @@
-import { getStatusBarHeight } from 'react-native-status-bar-height';
+import { StatusBar } from 'react-native';
 
 import { Feather } from '@expo/vector-icons';
 import styled from 'styled-components/native';
 
 export const Container = styled.View.attrs({
-  paddingTop: getStatusBarHeight(),
+  paddingTop: StatusBar.currentHeight || 44,
 })`
   flex: 1;
   background: #fff;

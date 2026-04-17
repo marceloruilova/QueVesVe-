@@ -7,7 +7,7 @@ import {
   AntDesign,
 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { Camera } from 'expo-camera';
+import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 
 import {
   Container,
@@ -19,28 +19,22 @@ import {
 } from './styles';
 
 const Record: React.FC = () => {
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [type, setType] = useState(Camera.Constants.Type.back);
-
+  const [facing, setFacing] = useState<CameraType>('back');
+  const [permission, requestPermission] = useCameraPermissions();
   const navigation = useNavigation();
+
   useEffect(() => {
-    async function permission(): Promise<void> {
-      const { status } = await Camera.requestPermissionsAsync();
-      setHasPermission(status === 'granted');
-      StatusBar.setHidden(true);
+    StatusBar.setHidden(true);
+    if (!permission?.granted) {
+      requestPermission();
     }
-    permission();
   }, []);
 
-  if (hasPermission === null) {
-    return <View />;
-  }
-  if (hasPermission === false) {
-    return <Text>No access to camera</Text>;
-  }
+  if (!permission) return <View />;
+  if (!permission.granted) return <Text>No access to camera</Text>;
 
   return (
-    <Camera style={{ flex: 1 }} type={type}>
+    <CameraView style={{ flex: 1 }} facing={facing}>
       <Container>
         <Header>
           <Button
@@ -58,13 +52,7 @@ const Record: React.FC = () => {
             </Row>
           </Button>
           <Button
-            onPress={() => {
-              setType(
-                type === Camera.Constants.Type.back
-                  ? Camera.Constants.Type.front
-                  : Camera.Constants.Type.back,
-              );
-            }}
+            onPress={() => setFacing(facing === 'back' ? 'front' : 'back')}
           >
             <MaterialCommunityIcons
               name="rotate-right"
@@ -75,7 +63,7 @@ const Record: React.FC = () => {
         </Header>
         <RecordButton />
       </Container>
-    </Camera>
+    </CameraView>
   );
 };
 

@@ -74,10 +74,7 @@ const AppRoutes: React.FC = () => {
         component={Record}
         listeners={({ navigation }) => ({
           tabPress: e => {
-            // Prevent default action
             e.preventDefault();
-
-            // Do something with the `navigation` object
             navigation.navigate('Record');
           },
         })}
@@ -116,16 +113,16 @@ const AppRoutes: React.FC = () => {
 
 const RootStackScreen: React.FC = () => {
   return (
-    <Stack.Navigator mode="modal">
+    <Stack.Navigator>
       <Stack.Screen
         name="Main"
         component={AppRoutes}
         options={{ headerShown: false }}
       />
       <Stack.Screen
-        options={{ headerShown: false }}
         name="Record"
         component={Record}
+        options={{ headerShown: false, presentation: 'modal' }}
       />
     </Stack.Navigator>
   );

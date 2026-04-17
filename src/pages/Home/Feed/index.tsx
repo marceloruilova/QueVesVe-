@@ -2,9 +2,9 @@ import React from 'react';
 import { Image, Animated, Easing } from 'react-native';
 
 import { FontAwesome, AntDesign } from '@expo/vector-icons';
-import { Video } from 'expo-av';
+import { Video, ResizeMode } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
-import Lottie from 'lottie-react-native';
+import LottieView from 'lottie-react-native';
 
 import musicFly from '../../../assets/lottie-animations/music-fly.json';
 
@@ -70,7 +70,7 @@ const Feed: React.FC<Props> = ({ play, item }) => {
           rate={1.0}
           volume={1.0}
           isMuted={false}
-          resizeMode="cover"
+          resizeMode={ResizeMode.COVER}
           shouldPlay={play}
           isLooping
           style={{
@@ -123,7 +123,7 @@ const Feed: React.FC<Props> = ({ play, item }) => {
               borderColor: '#292929',
               transform: [
                 {
-                  rotate: play ? rotateProp : 0,
+                  rotate: play ? rotateProp : '0deg',
                 },
               ],
             }}
@@ -140,7 +140,7 @@ const Feed: React.FC<Props> = ({ play, item }) => {
             />
           </Animated.View>
 
-          <Lottie
+          <LottieView
             source={musicFly}
             progress={play ? spinValue : 0}
             style={{ width: 150, position: 'absolute', bottom: 0, right: 0 }}
