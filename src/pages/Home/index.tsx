@@ -1,16 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View } from 'react-native';
 
 import PagerView from 'react-native-pager-view';
 
-import server from '../../../server.json';
+import { getFeed, FeedItem } from '../../../services/api';
+import { useAuth } from '../../../contexts/AuthContext';
 import Feed from './Feed';
 
 import { Container, Header, Text, Tab, Separator } from './styles';
 
 const Home: React.FC = () => {
+  const { accessToken } = useAuth();
   const [tab, setTab] = useState(1);
   const [active, setActive] = useState(0);
+  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
+
+  useEffect(() => {
+    if (!accessToken) return;
+    getFeed(accessToken)
+      .then(setFeedItems)
+      .catch(() => setFeedItems([]));
+  }, [accessToken]);
+
   return (
     <Container>
       <Header>
@@ -30,7 +41,7 @@ const Home: React.FC = () => {
         style={{ flex: 1 }}
         initialPage={0}
       >
-        {server.feed.map(item => (
+        {feedItems.map(item => (
           <View key={item.id}>
             <Feed item={item} play={Number(item.id) === active} />
           </View>

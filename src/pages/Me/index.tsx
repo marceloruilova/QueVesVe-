@@ -1,9 +1,10 @@
 import React from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView, TouchableOpacity, Alert } from 'react-native';
 
 import { MaterialIcons, AntDesign, FontAwesome } from '@expo/vector-icons';
 
 import avatar from '../../assets/avatar.png';
+import { useAuth } from '../../contexts/AuthContext';
 
 import {
   Container,
@@ -24,6 +25,15 @@ import {
 } from './styles';
 
 const Me: React.FC = () => {
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    Alert.alert('Log out', 'Are you sure you want to log out?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Log out', style: 'destructive', onPress: logout },
+    ]);
+  };
+
   return (
     <Container>
       <Header>
@@ -33,32 +43,32 @@ const Me: React.FC = () => {
           size={24}
           color="black"
         />
-        <Title>Matheus Castro</Title>
+        <Title>{user?.username ?? ''}</Title>
         <MaterialIcons name="arrow-drop-down" size={24} color="black" />
-        <FontAwesome
+        <TouchableOpacity
           style={{ position: 'absolute', right: 13, top: 12 }}
-          name="ellipsis-v"
-          size={24}
-          color="black"
-        />
+          onPress={handleLogout}
+        >
+          <FontAwesome name="ellipsis-v" size={24} color="black" />
+        </TouchableOpacity>
       </Header>
       <ScrollView>
         <Content>
           <Avatar source={avatar} />
-          <Username>@matheuscastroweb</Username>
+          <Username>@{user?.username ?? ''}</Username>
           <Stats>
             <StatsColumn>
-              <StatsNumber>1950</StatsNumber>
+              <StatsNumber>0</StatsNumber>
               <StatsText>Following</StatsText>
             </StatsColumn>
             <Separator>|</Separator>
             <StatsColumn>
-              <StatsNumber>650</StatsNumber>
+              <StatsNumber>0</StatsNumber>
               <StatsText>Followers</StatsText>
             </StatsColumn>
             <Separator>|</Separator>
             <StatsColumn>
-              <StatsNumber>950</StatsNumber>
+              <StatsNumber>0</StatsNumber>
               <StatsText>Likes</StatsText>
             </StatsColumn>
           </Stats>
@@ -69,7 +79,7 @@ const Me: React.FC = () => {
             <Bookmark name="bookmark" size={24} color="black" />
           </ProfileColumn>
 
-          <StatsText>Tap to add bio</StatsText>
+          <StatsText>{user?.bio || 'Tap to add bio'}</StatsText>
         </Content>
       </ScrollView>
     </Container>
