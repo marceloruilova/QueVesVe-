@@ -44,7 +44,7 @@ const Login: React.FC = () => {
 
   return (
     <Container>
-      <Logo>TikTok</Logo>
+      <Logo>QueVesVe!&</Logo>
       <Subtitle>Sign in to your account</Subtitle>
 
       {error ? <ErrorText>{error}</ErrorText> : null}

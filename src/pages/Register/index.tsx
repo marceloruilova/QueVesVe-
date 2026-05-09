@@ -45,7 +45,7 @@ const Register: React.FC = () => {
 
   return (
     <Container>
-      <Logo>TikTok</Logo>
+      <Logo>QueVesVe!&</Logo>
       <Subtitle>Create your account</Subtitle>
 
       {error ? <ErrorText>{error}</ErrorText> : null}

@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "ticktok-clone-app",
-    "slug": "ticktopcloneapp",
+    "name": "QueVesVe!&",
+    "slug": "quevesve",
     "privacy": "public",
     "platforms": ["ios", "android"],
     "version": "1.0.0",
@@ -10,7 +10,7 @@
     "splash": {
       "image": "./src/assets/splash.png",
       "resizeMode": "cover",
-      "backgroundColor": "#000000"
+      "backgroundColor": "#F5A623"
     },
     "updates": {
       "fallbackToCacheTimeout": 0

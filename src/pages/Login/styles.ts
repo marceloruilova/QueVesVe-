@@ -11,7 +11,7 @@ export const Logo = styled.Text`
   font-size: 40px;
   font-weight: 900;
   text-align: center;
-  color: #fe2c55;
+  color: #F5A623;
   letter-spacing: -1px;
   margin-bottom: 8px;
 `;
@@ -34,7 +34,7 @@ export const Input = styled.TextInput`
 `;
 
 export const Button = styled.TouchableOpacity`
-  background-color: #fe2c55;
+  background-color: #F5A623;
   border-radius: 4px;
   padding: 14px;
   align-items: center;
@@ -59,13 +59,13 @@ export const FooterText = styled.Text`
 `;
 
 export const FooterLink = styled.Text`
-  color: #fe2c55;
+  color: #F5A623;
   font-size: 14px;
   font-weight: bold;
 `;
 
 export const ErrorText = styled.Text`
-  color: #fe2c55;
+  color: #F5A623;
   font-size: 13px;
   text-align: center;
   margin-bottom: 12px;

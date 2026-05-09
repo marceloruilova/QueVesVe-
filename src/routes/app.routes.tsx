@@ -40,10 +40,10 @@ const AppRoutes: React.FC = () => {
     <Tab.Navigator
       shifting={false}
       barStyle={{
-        backgroundColor: home ? '#000' : '#fff',
+        backgroundColor: home ? '#000' : '#F5A623',
       }}
       initialRouteName="Home"
-      activeColor={home ? '#fff' : '#000'}
+      activeColor={home ? '#fff' : '#1A1A1A'}
     >
       <Tab.Screen
         name="Home"
@@ -53,7 +53,7 @@ const AppRoutes: React.FC = () => {
           blur: () => setHome(false),
         }}
         options={{
-          tabBarLabel: 'Home',
+          tabBarLabel: 'Vé!',
           tabBarIcon: ({ color }) => (
             <FontAwesome name="home" size={24} color={color} />
           ),
@@ -63,7 +63,7 @@ const AppRoutes: React.FC = () => {
         name="Discover"
         component={Discover}
         options={{
-          tabBarLabel: 'Discover',
+          tabBarLabel: 'Muchachos',
           tabBarIcon: ({ color }) => (
             <AntDesign name="search1" size={24} color={color} />
           ),
@@ -87,7 +87,7 @@ const AppRoutes: React.FC = () => {
         name="Inbox"
         component={Inbox}
         options={{
-          tabBarLabel: 'Inbox',
+          tabBarLabel: 'Chat(o)',
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons
               name="message-text-outline"
@@ -101,7 +101,7 @@ const AppRoutes: React.FC = () => {
         name="Me"
         component={Me}
         options={{
-          tabBarLabel: 'Me',
+          tabBarLabel: 'Yo',
           tabBarIcon: ({ color }) => (
             <AntDesign name="user" size={24} color={color} />
           ),

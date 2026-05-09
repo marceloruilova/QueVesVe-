@@ -31,10 +31,10 @@ export const RecordButton = styled.TouchableOpacity`
   width: 80px;
   height: 80px;
   border-width: 6px;
-  border-color: #8c1227;
+  border-color: #C42B2F;
   border-radius: 40px;
   align-self: center;
   bottom: 5%;
   position: absolute;
-  background-color: #fe2b54;
+  background-color: #E5363A;
 `;

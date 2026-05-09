@@ -13,9 +13,9 @@ export const Container = styled.View`
   align-items: center;
   background: ${(props: Props) => (props.home ? '#fff' : '#000')};
   border-left-width: 3px;
-  border-left-color: #20d5ea;
+  border-left-color: #F5A623;
   border-right-width: 3px;
-  border-right-color: #ec376d;
+  border-right-color: #E5363A;
 `;
 
 export const Button = styled.TouchableOpacity.attrs({
