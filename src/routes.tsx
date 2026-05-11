@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, ActivityIndicator } from 'react-native';
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import Splash from './pages/Splash';
 import AppRoutes from './routes/app.routes';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -22,11 +22,7 @@ const RootNavigator: React.FC = () => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#fe2c55" />
-      </View>
-    );
+    return <Splash />;
   }
 
   return user ? <AppRoutes /> : <AuthStack />;
