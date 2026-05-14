@@ -23,6 +23,7 @@ import {
 interface Item {
   id: number;
   username: string;
+  profile_picture: string | null;
   tags: string;
   music: string;
   likes: number;
@@ -134,9 +135,11 @@ const Feed: React.FC<Props> = ({ play, item }) => {
                 height: 35,
                 borderRadius: 25,
               }}
-              source={{
-                uri: 'https://avatars3.githubusercontent.com/u/45601574',
-              }}
+              source={
+                item.profile_picture
+                  ? { uri: item.profile_picture }
+                  : require('../../../assets/leaf.png')
+              }
             />
           </Animated.View>
 

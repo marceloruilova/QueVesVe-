@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 export const API_BASE_URL =
-  Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
+  (Constants.expoConfig?.extra?.apiBaseUrl as string) || 'http://localhost:8000';

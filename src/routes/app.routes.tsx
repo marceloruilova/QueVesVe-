@@ -15,6 +15,7 @@ import Home from '../pages/Home';
 import Inbox from '../pages/Inbox';
 import Me from '../pages/Me';
 import Record from '../pages/Record';
+import UploadVideo from '../pages/Record/UploadVideo';
 
 const Tab = createMaterialBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -123,6 +124,11 @@ const RootStackScreen: React.FC = () => {
         name="Record"
         component={Record}
         options={{ headerShown: false, presentation: 'modal' }}
+      />
+      <Stack.Screen
+        name="UploadVideo"
+        component={UploadVideo}
+        options={{ headerShown: false }}
       />
     </Stack.Navigator>
   );
