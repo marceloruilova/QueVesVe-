@@ -16,6 +16,20 @@ export default {
       fallbackToCacheTimeout: 0,
     },
     assetBundlePatterns: ['**/*'],
+    android: {
+      package: 'com.quevesve.app',
+      versionCode: 1,
+      adaptiveIcon: {
+        foregroundImage: './src/assets/leaf.png',
+        backgroundColor: '#F5A623',
+      },
+      permissions: [
+        'CAMERA',
+        'READ_MEDIA_IMAGES',
+        'READ_MEDIA_VIDEO',
+        'RECORD_AUDIO',
+      ],
+    },
     ios: {
       supportsTablet: true,
     },
@@ -31,6 +45,9 @@ export default {
     ],
     extra: {
       apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:8000',
+      eas: {
+        projectId: '70c66ce0-c11a-43f2-bbcf-a14ff4f0bde9',
+      },
     },
   },
 };
