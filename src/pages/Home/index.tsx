@@ -3,8 +3,8 @@ import { View } from 'react-native';
 
 import PagerView from 'react-native-pager-view';
 
-import { getFeed, FeedItem } from '../../../services/api';
-import { useAuth } from '../../../contexts/AuthContext';
+import { getFeed, FeedItem } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import Feed from './Feed';
 
 import { Container, Header, Text, Tab, Separator } from './styles';
