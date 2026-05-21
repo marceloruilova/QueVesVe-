@@ -1,10 +1,20 @@
-import React from 'react';
-import { ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import {
+  FlatList,
+  TouchableOpacity,
+  Alert,
+  Image,
+  View,
+  Text,
+  Dimensions,
+} from 'react-native';
 
 import { MaterialIcons, AntDesign, FontAwesome } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 
 import avatar from '../../assets/avatar.png';
 import { useAuth } from '../../contexts/AuthContext';
+import { getUserVideos, FeedItem } from '../../services/api';
 
 import {
   Container,
@@ -24,8 +34,21 @@ import {
   Bookmark,
 } from './styles';
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CELL_SIZE = SCREEN_WIDTH / 3 - 1;
+
 const Me: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, accessToken, logout } = useAuth();
+  const [videos, setVideos] = useState<FeedItem[]>([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!accessToken || !user) return;
+      getUserVideos(user.id, accessToken)
+        .then(setVideos)
+        .catch(() => setVideos([]));
+    }, [accessToken, user]),
+  );
 
   const handleLogout = () => {
     Alert.alert('Log out', 'Are you sure you want to log out?', [
@@ -33,6 +56,36 @@ const Me: React.FC = () => {
       { text: 'Log out', style: 'destructive', onPress: logout },
     ]);
   };
+
+  const ProfileHeader = (
+    <Content>
+      <Avatar source={avatar} />
+      <Username>@{user?.username ?? ''}</Username>
+      <Stats>
+        <StatsColumn>
+          <StatsNumber>0</StatsNumber>
+          <StatsText>Following</StatsText>
+        </StatsColumn>
+        <Separator>|</Separator>
+        <StatsColumn>
+          <StatsNumber>0</StatsNumber>
+          <StatsText>Followers</StatsText>
+        </StatsColumn>
+        <Separator>|</Separator>
+        <StatsColumn>
+          <StatsNumber>{videos.length}</StatsNumber>
+          <StatsText>Videos</StatsText>
+        </StatsColumn>
+      </Stats>
+      <ProfileColumn>
+        <ProfileEdit>
+          <ProfileText>Edit profile</ProfileText>
+        </ProfileEdit>
+        <Bookmark name="bookmark" size={24} color="black" />
+      </ProfileColumn>
+      <StatsText>{user?.bio || 'Tap to add bio'}</StatsText>
+    </Content>
+  );
 
   return (
     <Container>
@@ -52,36 +105,43 @@ const Me: React.FC = () => {
           <FontAwesome name="ellipsis-v" size={24} color="black" />
         </TouchableOpacity>
       </Header>
-      <ScrollView>
-        <Content>
-          <Avatar source={avatar} />
-          <Username>@{user?.username ?? ''}</Username>
-          <Stats>
-            <StatsColumn>
-              <StatsNumber>0</StatsNumber>
-              <StatsText>Following</StatsText>
-            </StatsColumn>
-            <Separator>|</Separator>
-            <StatsColumn>
-              <StatsNumber>0</StatsNumber>
-              <StatsText>Followers</StatsText>
-            </StatsColumn>
-            <Separator>|</Separator>
-            <StatsColumn>
-              <StatsNumber>0</StatsNumber>
-              <StatsText>Likes</StatsText>
-            </StatsColumn>
-          </Stats>
-          <ProfileColumn>
-            <ProfileEdit>
-              <ProfileText>Edit profile</ProfileText>
-            </ProfileEdit>
-            <Bookmark name="bookmark" size={24} color="black" />
-          </ProfileColumn>
 
-          <StatsText>{user?.bio || 'Tap to add bio'}</StatsText>
-        </Content>
-      </ScrollView>
+      <FlatList
+        data={videos}
+        keyExtractor={item => String(item.id)}
+        numColumns={3}
+        ListHeaderComponent={ProfileHeader}
+        columnWrapperStyle={{ gap: 1 }}
+        ItemSeparatorComponent={() => <View style={{ height: 1 }} />}
+        renderItem={({ item }) => (
+          <View
+            style={{
+              width: CELL_SIZE,
+              height: CELL_SIZE * 1.4,
+              backgroundColor: '#1a1a1a',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            {item.thumbnail_url ? (
+              <Image
+                source={{ uri: item.thumbnail_url }}
+                style={{ width: '100%', height: '100%' }}
+                resizeMode="cover"
+              />
+            ) : (
+              <FontAwesome name="play" size={24} color="rgba(255,255,255,0.5)" />
+            )}
+          </View>
+        )}
+        ListEmptyComponent={
+          <View style={{ alignItems: 'center', marginTop: 40 }}>
+            <Text style={{ color: '#aaa', fontSize: 14 }}>
+              Todavía no subiste ningún video
+            </Text>
+          </View>
+        }
+      />
     </Container>
   );
 };

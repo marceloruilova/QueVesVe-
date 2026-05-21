@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Image, Animated, Easing } from 'react-native';
 
 import { FontAwesome, AntDesign } from '@expo/vector-icons';
@@ -6,6 +6,9 @@ import { Video, ResizeMode } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
 
+import { useAuth } from '../../../contexts/AuthContext';
+import { toggleLike } from '../../../services/api';
+import CommentsModal from './CommentsModal';
 import musicFly from '../../../assets/lottie-animations/music-fly.json';
 
 import {
@@ -28,6 +31,7 @@ interface Item {
   music: string;
   likes: number;
   comments: number;
+  liked_by_user: boolean;
   uri: string;
 }
 
@@ -37,6 +41,11 @@ interface Props {
 }
 
 const Feed: React.FC<Props> = ({ play, item }) => {
+  const { accessToken } = useAuth();
+  const [liked, setLiked] = useState(item.liked_by_user);
+  const [likesCount, setLikesCount] = useState(item.likes);
+  const [showComments, setShowComments] = useState(false);
+
   const spinValue = new Animated.Value(0);
 
   Animated.loop(
@@ -52,6 +61,21 @@ const Feed: React.FC<Props> = ({ play, item }) => {
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg'],
   });
+
+  const handleLike = async () => {
+    if (!accessToken) return;
+    const nextLiked = !liked;
+    setLiked(nextLiked);
+    setLikesCount(prev => prev + (nextLiked ? 1 : -1));
+    try {
+      const res = await toggleLike(item.id, liked, accessToken);
+      setLikesCount(res.likes);
+      setLiked(res.liked_by_user);
+    } catch {
+      setLiked(liked);
+      setLikesCount(likesCount);
+    }
+  };
 
   return (
     <>
@@ -89,16 +113,16 @@ const Feed: React.FC<Props> = ({ play, item }) => {
         </MusicBox>
       </Details>
       <Actions>
-        <BoxAction>
+        <BoxAction onPress={handleLike}>
           <AntDesign
             style={{ alignSelf: 'center' }}
             name="heart"
             size={35}
-            color="#fff"
+            color={liked ? '#E5363A' : '#fff'}
           />
-          <TextAction>{item.likes}</TextAction>
+          <TextAction>{likesCount}</TextAction>
         </BoxAction>
-        <BoxAction>
+        <BoxAction onPress={() => setShowComments(true)}>
           <FontAwesome
             style={{ alignSelf: 'center' }}
             name="commenting"
@@ -159,6 +183,12 @@ const Feed: React.FC<Props> = ({ play, item }) => {
           bottom: 0,
           height: '50%',
         }}
+      />
+
+      <CommentsModal
+        videoId={item.id}
+        visible={showComments}
+        onClose={() => setShowComments(false)}
       />
     </>
   );
