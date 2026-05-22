@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { View, PanResponder } from 'react-native';
+import { View, PanResponder, Text as RNText } from 'react-native';
 
 import PagerView from 'react-native-pager-view';
 import { useFocusEffect } from '@react-navigation/native';
@@ -9,7 +9,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import Feed from './Feed';
 
 import { Container, Header, Text, Tab, Separator } from './styles';
-import { Text as RNText } from 'react-native';
 
 const Home: React.FC = () => {
   const { accessToken } = useAuth();
@@ -28,13 +27,14 @@ const Home: React.FC = () => {
   );
 
   // Swipe horizontal sobre el header para cambiar tab
+  // setTab y setActive son estables (useState), seguros de capturar en useRef
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, g) =>
         Math.abs(g.dx) > 20 && Math.abs(g.dx) > Math.abs(g.dy),
       onPanResponderRelease: (_, g) => {
-        if (g.dx < -30) setTab(2); // swipe izquierda → For You
-        if (g.dx > 30) setTab(1);  // swipe derecha → Following
+        if (g.dx < -30) { setTab(2); setActive(0); }
+        if (g.dx > 30)  { setTab(1); setActive(0); }
       },
     }),
   ).current;
@@ -48,11 +48,11 @@ const Home: React.FC = () => {
   return (
     <Container>
       <Header {...panResponder.panHandlers}>
-        <Tab onPress={() => setTab(1)}>
+        <Tab onPress={() => { setTab(1); setActive(0); }}>
           <Text active={tab === 1}>Following</Text>
         </Tab>
         <Separator>|</Separator>
-        <Tab onPress={() => setTab(2)}>
+        <Tab onPress={() => { setTab(2); setActive(0); }}>
           <Text active={tab === 2}>For You</Text>
         </Tab>
       </Header>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Image, Animated, Easing } from 'react-native';
 
 import { FontAwesome, AntDesign } from '@expo/vector-icons';
@@ -46,16 +46,20 @@ const Feed: React.FC<Props> = ({ play, item }) => {
   const [likesCount, setLikesCount] = useState(item.likes);
   const [showComments, setShowComments] = useState(false);
 
-  const spinValue = new Animated.Value(0);
+  const spinValue = useRef(new Animated.Value(0)).current;
 
-  Animated.loop(
-    Animated.timing(spinValue, {
-      toValue: 1,
-      duration: 10000,
-      easing: Easing.linear,
-      useNativeDriver: true,
-    }),
-  ).start();
+  useEffect(() => {
+    const anim = Animated.loop(
+      Animated.timing(spinValue, {
+        toValue: 1,
+        duration: 10000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [spinValue]);
 
   const rotateProp = spinValue.interpolate({
     inputRange: [0, 1],
