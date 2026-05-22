@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { View, ScrollView, Dimensions, Text as RNText } from 'react-native';
+import { View, PanResponder } from 'react-native';
 
 import PagerView from 'react-native-pager-view';
 import { useFocusEffect } from '@react-navigation/native';
@@ -9,15 +9,14 @@ import { useAuth } from '../../contexts/AuthContext';
 import Feed from './Feed';
 
 import { Container, Header, Text, Tab, Separator } from './styles';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { Text as RNText } from 'react-native';
 
 const Home: React.FC = () => {
   const { accessToken } = useAuth();
-  const [tab, setTab] = useState(2); // 1=Following, 2=For You; inicia en For You
+  // tab: 1 = Following, 2 = For You
+  const [tab, setTab] = useState(2);
   const [active, setActive] = useState(0);
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
-  const horizontalRef = useRef<ScrollView>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -28,71 +27,58 @@ const Home: React.FC = () => {
     }, [accessToken]),
   );
 
-  const switchTab = (newTab: number) => {
-    setTab(newTab);
-    horizontalRef.current?.scrollTo({
-      x: (newTab - 1) * SCREEN_WIDTH,
-      animated: true,
-    });
-  };
+  // Swipe horizontal sobre el header para cambiar tab
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) =>
+        Math.abs(g.dx) > 20 && Math.abs(g.dx) > Math.abs(g.dy),
+      onPanResponderRelease: (_, g) => {
+        if (g.dx < -30) setTab(2); // swipe izquierda → For You
+        if (g.dx > 30) setTab(1);  // swipe derecha → Following
+      },
+    }),
+  ).current;
 
-  const handleHorizontalScroll = (e: { nativeEvent: { contentOffset: { x: number } } }) => {
-    const pageIndex = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
-    setTab(pageIndex + 1);
-  };
+  const forYouFeed = feedItems;
+  const followingFeed: FeedItem[] = [];
+
+  const activeFeed = tab === 1 ? followingFeed : forYouFeed;
+  const isEmpty = activeFeed.length === 0;
 
   return (
     <Container>
-      <Header>
-        <Tab onPress={() => switchTab(1)}>
+      <Header {...panResponder.panHandlers}>
+        <Tab onPress={() => setTab(1)}>
           <Text active={tab === 1}>Following</Text>
         </Tab>
         <Separator>|</Separator>
-        <Tab onPress={() => switchTab(2)}>
+        <Tab onPress={() => setTab(2)}>
           <Text active={tab === 2}>For You</Text>
         </Tab>
       </Header>
 
-      <ScrollView
-        ref={horizontalRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={handleHorizontalScroll}
-        scrollEventThrottle={16}
-        style={{ flex: 1 }}
-        contentOffset={{ x: SCREEN_WIDTH, y: 0 }}
-      >
-        {/* Following — vacío hasta que exista sistema de follows */}
-        <View
-          style={{
-            width: SCREEN_WIDTH,
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
+      {isEmpty ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <RNText style={{ color: '#fff', fontSize: 16, opacity: 0.6 }}>
-            Seguí a alguien para ver su contenido
+            {tab === 1
+              ? 'Seguí a alguien para ver su contenido'
+              : 'No hay videos todavía'}
           </RNText>
         </View>
-
-        {/* For You */}
-        <View style={{ width: SCREEN_WIDTH, flex: 1 }}>
-          <PagerView
-            onPageSelected={e => setActive(e.nativeEvent.position)}
-            orientation="vertical"
-            style={{ flex: 1 }}
-            initialPage={0}
-          >
-            {feedItems.map((item, index) => (
-              <View key={item.id}>
-                <Feed item={item} play={tab === 2 && index === active} />
-              </View>
-            ))}
-          </PagerView>
-        </View>
-      </ScrollView>
+      ) : (
+        <PagerView
+          onPageSelected={e => setActive(e.nativeEvent.position)}
+          orientation="vertical"
+          style={{ flex: 1 }}
+          initialPage={0}
+        >
+          {activeFeed.map((item, index) => (
+            <View key={item.id}>
+              <Feed item={item} play={index === active} />
+            </View>
+          ))}
+        </PagerView>
+      )}
     </Container>
   );
 };
