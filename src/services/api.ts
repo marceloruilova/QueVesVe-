@@ -23,14 +23,24 @@ export async function loginUser(
   username: string,
   password: string,
 ): Promise<LoginResponse> {
-  const res = await fetch(`${API_BASE_URL}/users/login/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Login failed');
-  return data;
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/users/login/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  let data: { access?: string; refresh?: string; error?: string };
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
+  if (!res.ok) throw new Error(data.error ?? 'Login failed');
+  return data as LoginResponse;
 }
 
 export async function registerUser(
@@ -38,28 +48,47 @@ export async function registerUser(
   email: string,
   password: string,
 ): Promise<RegisterResponse> {
-  const res = await fetch(`${API_BASE_URL}/users/register/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, email, password }),
-  });
-  const data = await res.json();
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/users/register/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password }),
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  let data: { username?: string[]; email?: string[]; [key: string]: unknown };
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
   if (!res.ok) throw new Error(data?.username?.[0] || data?.email?.[0] || 'Registration failed');
-  return data;
+  return data as RegisterResponse;
 }
 
 export async function getUserProfile(
   userId: number,
   accessToken: string,
 ): Promise<User> {
-  const res = await fetch(`${API_BASE_URL}/users/${userId}/`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/users/${userId}/`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
   if (!res.ok) throw new Error('Failed to fetch user profile');
-  return res.json();
+  try {
+    return await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
 }
 
 export interface FeedItem {
@@ -83,25 +112,43 @@ export interface CommentItem {
 }
 
 export async function getFeed(accessToken: string): Promise<FeedItem[]> {
-  const res = await fetch(`${API_BASE_URL}/videos/`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/videos/`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
   if (!res.ok) throw new Error('Failed to fetch feed');
-  return res.json();
+  try {
+    return await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
 }
 
 export async function getUserVideos(userId: number, accessToken: string): Promise<FeedItem[]> {
-  const res = await fetch(`${API_BASE_URL}/videos/?user_id=${userId}`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/videos/?user_id=${userId}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
   if (!res.ok) throw new Error('Failed to fetch user videos');
-  return res.json();
+  try {
+    return await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
 }
 
 export async function uploadVideo(
@@ -134,20 +181,38 @@ export async function toggleLike(
   liked: boolean,
   accessToken: string,
 ): Promise<{ likes: number; liked_by_user: boolean }> {
-  const res = await fetch(`${API_BASE_URL}/videos/${videoId}/like/`, {
-    method: liked ? 'DELETE' : 'POST',
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/videos/${videoId}/like/`, {
+      method: liked ? 'DELETE' : 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
   if (!res.ok) throw new Error('Failed to toggle like');
-  return res.json();
+  try {
+    return await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
 }
 
 export async function getComments(videoId: number, accessToken: string): Promise<CommentItem[]> {
-  const res = await fetch(`${API_BASE_URL}/videos/${videoId}/comments/`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/videos/${videoId}/comments/`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
   if (!res.ok) throw new Error('Failed to fetch comments');
-  return res.json();
+  try {
+    return await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
 }
 
 export async function postComment(
@@ -155,20 +220,34 @@ export async function postComment(
   text: string,
   accessToken: string,
 ): Promise<CommentItem> {
-  const res = await fetch(`${API_BASE_URL}/videos/${videoId}/comments/`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ text }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/videos/${videoId}/comments/`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text }),
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
   if (!res.ok) throw new Error('Failed to post comment');
-  return res.json();
+  try {
+    return await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
 }
 
 export function decodeJWT(token: string): { user_id: number; [key: string]: unknown } {
-  const payload = token.split('.')[1];
-  const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
-  return JSON.parse(decoded);
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) throw new Error('Invalid JWT format');
+    const decoded = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(decoded);
+  } catch {
+    throw new Error('Token inválido. Iniciá sesión de nuevo.');
+  }
 }
