@@ -65,7 +65,7 @@ export async function registerUser(
     throw new Error('Error del servidor. Intentá de nuevo.');
   }
   if (!res.ok) throw new Error(data?.username?.[0] || data?.email?.[0] || 'Registration failed');
-  return data as RegisterResponse;
+  return data as unknown as RegisterResponse;
 }
 
 export async function getUserProfile(
