@@ -32,7 +32,7 @@ interface Item {
   likes: number;
   comments: number;
   liked_by_user: boolean;
-  uri: string;
+  uri: string | null;
 }
 
 interface Props {
@@ -94,19 +94,21 @@ const Feed: React.FC<Props> = ({ play, item }) => {
         }}
       />
       <Container>
-        <Video
-          source={{ uri: item.uri }}
-          rate={1.0}
-          volume={1.0}
-          isMuted={false}
-          resizeMode={ResizeMode.COVER}
-          shouldPlay={play}
-          isLooping
-          style={{
-            width: '100%',
-            height: '100%',
-          }}
-        />
+        {item.uri ? (
+          <Video
+            source={{ uri: item.uri }}
+            rate={1.0}
+            volume={1.0}
+            isMuted={false}
+            resizeMode={ResizeMode.COVER}
+            shouldPlay={play}
+            isLooping
+            style={{
+              width: '100%',
+              height: '100%',
+            }}
+          />
+        ) : null}
       </Container>
       <Details>
         <User>{item.username}</User>

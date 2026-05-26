@@ -100,7 +100,7 @@ export interface FeedItem {
   likes: number;
   comments: number;
   liked_by_user: boolean;
-  uri: string;
+  uri: string | null;
   thumbnail_url: string | null;
 }
 
