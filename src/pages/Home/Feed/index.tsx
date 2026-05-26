@@ -175,7 +175,8 @@ const Feed: React.FC<Props> = ({ play, item }) => {
 
           <LottieView
             source={musicFly}
-            progress={play ? spinValue : 0}
+            autoPlay={play}
+            loop
             style={{ width: 150, position: 'absolute', bottom: 0, right: 0 }}
           />
         </BoxAction>
