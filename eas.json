@@ -10,6 +10,9 @@
     },
     "preview": {
       "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
         "API_BASE_URL": "https://api.quevesve.app"
       }
