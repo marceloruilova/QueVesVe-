@@ -6,6 +6,15 @@ export interface User {
   email: string;
   bio: string;
   profile_picture: string | null;
+  professional_title: string;
+  professional_institution: string;
+  senescyt_number: string;
+  senescyt_verified: boolean;
+  senescyt_verified_name: string;
+  senescyt_verified_at: string | null;
+  followers_count: number;
+  following_count: number;
+  is_following: boolean;
 }
 
 export interface LoginResponse {
@@ -93,6 +102,7 @@ export async function getUserProfile(
 
 export interface FeedItem {
   id: number;
+  user_id: number;
   username: string;
   profile_picture: string | null;
   tags: string;
@@ -234,6 +244,100 @@ export async function postComment(
     throw new Error('No se pudo conectar con el servidor.');
   }
   if (!res.ok) throw new Error('Failed to post comment');
+  try {
+    return await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
+}
+
+export async function updateUserProfile(
+  userId: number,
+  data: FormData | Record<string, string>,
+  accessToken: string,
+): Promise<User> {
+  const isFormData = data instanceof FormData;
+  const headers: Record<string, string> = { Authorization: `Bearer ${accessToken}` };
+  if (!isFormData) headers['Content-Type'] = 'application/json';
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/users/${userId}/`, {
+      method: 'PUT',
+      headers,
+      body: isFormData ? data : JSON.stringify(data),
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  let responseData: { data?: User; [key: string]: unknown };
+  try {
+    responseData = await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
+  if (!res.ok) throw new Error(String(Object.values(responseData)[0]) ?? 'Error al actualizar perfil');
+  return (responseData.data ?? responseData) as User;
+}
+
+export async function verifySenescyt(
+  userId: number,
+  cedula: string,
+  numeroRegistroSenescyt: string,
+  accessToken: string,
+): Promise<{ detail: string; verified_name: string; title: string; institution: string }> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/users/${userId}/verify-senescyt/`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ cedula, numeroRegistroSenescyt }),
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  let data: { detail?: string; error?: string; [key: string]: unknown };
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
+  if (!res.ok) throw new Error(data.error ?? 'Error al verificar SENESCYT');
+  return data as { detail: string; verified_name: string; title: string; institution: string };
+}
+
+export async function followUser(userId: number, accessToken: string): Promise<{ followers_count: number }> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/users/${userId}/follow/`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  if (!res.ok) throw new Error('Error al seguir al usuario');
+  try {
+    return await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
+}
+
+export async function unfollowUser(userId: number, accessToken: string): Promise<{ followers_count: number }> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/users/${userId}/follow/`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  if (!res.ok) throw new Error('Error al dejar de seguir');
   try {
     return await res.json();
   } catch {

@@ -10,11 +10,13 @@ import {
 } from 'react-native';
 
 import { MaterialIcons, AntDesign, FontAwesome } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 
 import avatar from '../../assets/avatar.png';
 import { useAuth } from '../../contexts/AuthContext';
 import { getUserVideos, FeedItem } from '../../services/api';
+import { RootStackParamList } from '../../types/navigation';
 
 import {
   Container,
@@ -39,6 +41,7 @@ const CELL_SIZE = SCREEN_WIDTH / 3 - 1;
 
 const Me: React.FC = () => {
   const { user, accessToken, logout } = useAuth();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [videos, setVideos] = useState<FeedItem[]>([]);
 
   useFocusEffect(
@@ -63,13 +66,13 @@ const Me: React.FC = () => {
       <Username>@{user?.username ?? ''}</Username>
       <Stats>
         <StatsColumn>
-          <StatsNumber>0</StatsNumber>
-          <StatsText>Following</StatsText>
+          <StatsNumber>{user?.following_count ?? 0}</StatsNumber>
+          <StatsText>Siguiendo</StatsText>
         </StatsColumn>
         <Separator>|</Separator>
         <StatsColumn>
-          <StatsNumber>0</StatsNumber>
-          <StatsText>Followers</StatsText>
+          <StatsNumber>{user?.followers_count ?? 0}</StatsNumber>
+          <StatsText>Seguidores</StatsText>
         </StatsColumn>
         <Separator>|</Separator>
         <StatsColumn>
@@ -78,7 +81,7 @@ const Me: React.FC = () => {
         </StatsColumn>
       </Stats>
       <ProfileColumn>
-        <ProfileEdit>
+        <ProfileEdit onPress={() => navigation.navigate('EditProfile')}>
           <ProfileText>Edit profile</ProfileText>
         </ProfileEdit>
         <Bookmark name="bookmark" size={24} color="black" />

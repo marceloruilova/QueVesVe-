@@ -9,6 +9,7 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  updateUser: (updated: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -66,8 +67,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'userId']);
   };
 
+  const updateUser = (updated: User) => {
+    setUser(updated);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, accessToken, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, accessToken, loading, login, register, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

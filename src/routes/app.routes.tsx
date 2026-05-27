@@ -11,11 +11,13 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 import HomeButtom from '../components/HomeButton';
 import Discover from '../pages/Discover';
+import EditProfile from '../pages/EditProfile';
 import Home from '../pages/Home';
 import Inbox from '../pages/Inbox';
 import Me from '../pages/Me';
 import Record from '../pages/Record';
 import UploadVideo from '../pages/Record/UploadVideo';
+import UserProfile from '../pages/UserProfile';
 
 const Tab = createMaterialBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -128,6 +130,16 @@ const RootStackScreen: React.FC = () => {
       <Stack.Screen
         name="UploadVideo"
         component={UploadVideo}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="UserProfile"
+        component={UserProfile}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="EditProfile"
+        component={EditProfile}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

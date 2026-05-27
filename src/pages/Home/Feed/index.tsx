@@ -1,13 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Image, Animated, Easing } from 'react-native';
+import { Image, Animated, Easing, TouchableOpacity } from 'react-native';
 
 import { FontAwesome, AntDesign } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { Video, ResizeMode } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
 
 import { useAuth } from '../../../contexts/AuthContext';
 import { toggleLike } from '../../../services/api';
+import { RootStackParamList } from '../../../types/navigation';
 import CommentsModal from './CommentsModal';
 import musicFly from '../../../assets/lottie-animations/music-fly.json';
 
@@ -25,6 +28,7 @@ import {
 
 interface Item {
   id: number;
+  user_id: number;
   username: string;
   profile_picture: string | null;
   tags: string;
@@ -42,6 +46,7 @@ interface Props {
 
 const Feed: React.FC<Props> = ({ play, item }) => {
   const { accessToken } = useAuth();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [liked, setLiked] = useState(item.liked_by_user);
   const [likesCount, setLikesCount] = useState(item.likes);
   const [showComments, setShowComments] = useState(false);
@@ -111,7 +116,9 @@ const Feed: React.FC<Props> = ({ play, item }) => {
         ) : null}
       </Container>
       <Details>
-        <User>{item.username}</User>
+        <TouchableOpacity onPress={() => navigation.navigate('UserProfile', { userId: item.user_id })}>
+          <User>{item.username}</User>
+        </TouchableOpacity>
         <Tags>{item.tags}</Tags>
         <MusicBox>
           <FontAwesome name="music" size={15} color="#f5f5f5" />
