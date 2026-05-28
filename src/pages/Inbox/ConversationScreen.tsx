@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform } from 'react-native';
+import { Alert, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
-import { getMessages, sendMessage, markConversationRead, MessageItem } from '../../services/api';
+import { getMessages, sendMessage, markConversationRead, ChatBlockedError, MessageItem } from '../../services/api';
+import { RootStackParamList } from '../../types/navigation';
 import {
   ChatContainer,
   ChatHeader,
@@ -17,10 +18,6 @@ import {
   SendButton,
 } from './styles';
 
-type RootStackParams = {
-  Conversation: { conversationId: number; otherUsername: string; otherUserId: number };
-};
-
 function formatTime(dateStr: string): string {
   return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
@@ -28,7 +25,7 @@ function formatTime(dateStr: string): string {
 const ConversationScreen: React.FC = () => {
   const { accessToken, user } = useAuth();
   const navigation = useNavigation();
-  const route = useRoute<RouteProp<RootStackParams, 'Conversation'>>();
+  const route = useRoute<RouteProp<RootStackParamList, 'Conversation'>>();
   const { conversationId, otherUsername } = route.params;
 
   const [messages, setMessages] = useState<MessageItem[]>([]);
@@ -71,8 +68,11 @@ const ConversationScreen: React.FC = () => {
     try {
       const newMsg = await sendMessage(conversationId, text, accessToken);
       setMessages(prev => [...prev, newMsg]);
-    } catch {
+    } catch (err) {
       setInputText(text);
+      if (err instanceof ChatBlockedError) {
+        Alert.alert('Chat no disponible', err.message);
+      }
     } finally {
       setSending(false);
     }

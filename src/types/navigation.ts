@@ -4,4 +4,5 @@ export type RootStackParamList = {
   UploadVideo: { videoUri: string };
   UserProfile: { userId: number };
   EditProfile: undefined;
+  Conversation: { conversationId: number; otherUsername: string; otherUserId: number };
 };

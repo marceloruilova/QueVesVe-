@@ -17,7 +17,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 
 import avatar from '../../assets/avatar.png';
 import { useAuth } from '../../contexts/AuthContext';
-import { getUserProfile, getUserVideos, followUser, unfollowUser, FeedItem, User } from '../../services/api';
+import { getUserProfile, getUserVideos, followUser, unfollowUser, createOrGetConversation, ChatBlockedError, FeedItem, User } from '../../services/api';
 import { RootStackParamList } from '../../types/navigation';
 
 type UserProfileRouteProp = RouteProp<RootStackParamList, 'UserProfile'>;
@@ -38,6 +38,7 @@ const UserProfile: React.FC = () => {
   const [followLoading, setFollowLoading] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followersCount, setFollowersCount] = useState(0);
+  const [messageLoading, setMessageLoading] = useState(false);
 
   const isOwnProfile = me?.id === userId;
 
@@ -77,6 +78,27 @@ const UserProfile: React.FC = () => {
       Alert.alert('Error', 'No se pudo actualizar el seguimiento.');
     } finally {
       setFollowLoading(false);
+    }
+  };
+
+  const handleMessage = async () => {
+    if (!accessToken || !profile) return;
+    setMessageLoading(true);
+    try {
+      const conversation = await createOrGetConversation(profile.id, accessToken);
+      navigation.navigate('Conversation', {
+        conversationId: conversation.id,
+        otherUsername: profile.username,
+        otherUserId: profile.id,
+      });
+    } catch (err) {
+      if (err instanceof ChatBlockedError) {
+        Alert.alert('Chat no disponible', err.message);
+      } else {
+        Alert.alert('Error', 'No se pudo abrir el chat. Intentá de nuevo.');
+      }
+    } finally {
+      setMessageLoading(false);
     }
   };
 
@@ -131,19 +153,33 @@ const UserProfile: React.FC = () => {
           <Text style={styles.editButtonText}>Editar perfil</Text>
         </TouchableOpacity>
       ) : (
-        <TouchableOpacity
-          style={[styles.followButton, isFollowing && styles.followingButton]}
-          onPress={handleFollow}
-          disabled={followLoading}
-        >
-          {followLoading ? (
-            <ActivityIndicator size="small" color={isFollowing ? '#000' : '#fff'} />
-          ) : (
-            <Text style={[styles.followButtonText, isFollowing && styles.followingButtonText]}>
-              {isFollowing ? 'Siguiendo' : 'Seguir'}
-            </Text>
-          )}
-        </TouchableOpacity>
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={[styles.followButton, isFollowing && styles.followingButton]}
+            onPress={handleFollow}
+            disabled={followLoading}
+          >
+            {followLoading ? (
+              <ActivityIndicator size="small" color={isFollowing ? '#000' : '#fff'} />
+            ) : (
+              <Text style={[styles.followButtonText, isFollowing && styles.followingButtonText]}>
+                {isFollowing ? 'Siguiendo' : 'Seguir'}
+              </Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.messageButton}
+            onPress={handleMessage}
+            disabled={messageLoading}
+          >
+            {messageLoading ? (
+              <ActivityIndicator size="small" color="#1a1a1a" />
+            ) : (
+              <Text style={styles.messageButtonText}>Mensaje</Text>
+            )}
+          </TouchableOpacity>
+        </View>
       )}
 
       {/* Bio */}
@@ -248,18 +284,33 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   editButtonText: { fontWeight: 'bold', fontSize: 14 },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginVertical: 8,
+  },
   followButton: {
     backgroundColor: '#F5A623',
     borderRadius: 4,
     paddingVertical: 8,
-    paddingHorizontal: 40,
-    marginVertical: 8,
-    minWidth: 120,
+    paddingHorizontal: 24,
+    minWidth: 100,
     alignItems: 'center',
   },
   followingButton: { backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#e6e6e6' },
   followButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
   followingButtonText: { color: '#000' },
+  messageButton: {
+    borderWidth: 1.5,
+    borderColor: '#e6e6e6',
+    borderRadius: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 24,
+    minWidth: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  messageButtonText: { color: '#1a1a1a', fontWeight: 'bold', fontSize: 14 },
   bio: { fontSize: 14, color: '#444', textAlign: 'center', marginTop: 8, paddingHorizontal: 16 },
   professionalCard: {
     marginTop: 12,

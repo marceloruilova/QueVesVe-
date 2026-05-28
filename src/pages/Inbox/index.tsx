@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList } from 'react-native';
+import React, { useCallback, useRef, useState } from 'react';
+import { FlatList, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { Feather } from '@expo/vector-icons';
+import { Feather, AntDesign } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { getConversations, ConversationItem } from '../../services/api';
+import { RootStackParamList } from '../../types/navigation';
 import {
   Container,
   Header,
@@ -23,10 +24,6 @@ import {
   UnreadBadgeText,
 } from './styles';
 
-type RootStackParams = {
-  Conversation: { conversationId: number; otherUsername: string; otherUserId: number };
-};
-
 function formatTime(dateStr: string): string {
   const date = new Date(dateStr);
   const now = new Date();
@@ -43,7 +40,7 @@ function formatTime(dateStr: string): string {
 
 const Inbox: React.FC = () => {
   const { accessToken, user } = useAuth();
-  const navigation = useNavigation<StackNavigationProp<RootStackParams>>();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -111,12 +108,32 @@ const Inbox: React.FC = () => {
     );
   };
 
+  const notAdult = !user?.is_adult;
+
   return (
     <Container>
       <Header>
         <Title>Mensajes</Title>
         <Feather style={{ position: 'absolute', right: 16, top: 10 }} name="edit" size={22} color="#1a1a1a" />
       </Header>
+
+      {notAdult && (
+        <View style={inboxStyles.banner}>
+          <AntDesign name="exclamationcircleo" size={18} color="#D4891A" style={{ marginTop: 2 }} />
+          <View style={{ flex: 1 }}>
+            <Text style={inboxStyles.bannerTitle}>Para usar el chat necesitás:</Text>
+            <Text style={inboxStyles.bannerItem}>• Agregar tu fecha de nacimiento en tu perfil</Text>
+            <Text style={inboxStyles.bannerItem}>• Tener 18 años o más</Text>
+            <Text style={inboxStyles.bannerItem}>• Seguir mutuamente a tus contactos</Text>
+            <TouchableOpacity
+              style={inboxStyles.bannerButton}
+              onPress={() => navigation.navigate('EditProfile')}
+            >
+              <Text style={inboxStyles.bannerButtonText}>Actualizar mi perfil →</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       <FlatList
         data={conversations}
@@ -127,5 +144,28 @@ const Inbox: React.FC = () => {
     </Container>
   );
 };
+
+const inboxStyles = StyleSheet.create({
+  banner: {
+    flexDirection: 'row',
+    gap: 10,
+    backgroundColor: '#fff8ee',
+    borderLeftWidth: 4,
+    borderLeftColor: '#F5A623',
+    margin: 12,
+    borderRadius: 8,
+    padding: 12,
+  },
+  bannerTitle: { fontSize: 14, fontWeight: 'bold', color: '#1a1a1a', marginBottom: 4 },
+  bannerItem: { fontSize: 13, color: '#555', lineHeight: 20 },
+  bannerButton: {
+    marginTop: 10,
+    backgroundColor: '#F5A623',
+    borderRadius: 6,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  bannerButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
+});
 
 export default Inbox;

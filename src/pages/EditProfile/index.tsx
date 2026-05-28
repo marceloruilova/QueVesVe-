@@ -31,6 +31,7 @@ const EditProfile: React.FC = () => {
 
   const [username, setUsername] = useState(user?.username ?? '');
   const [bio, setBio] = useState(user?.bio ?? '');
+  const [birthDate, setBirthDate] = useState(user?.birth_date ?? '');
   const [professionalTitle, setProfessionalTitle] = useState(user?.professional_title ?? '');
   const [professionalInstitution, setProfessionalInstitution] = useState(
     user?.professional_institution ?? '',
@@ -96,6 +97,7 @@ const EditProfile: React.FC = () => {
         const form = new FormData();
         form.append('username', username);
         form.append('bio', bio);
+        if (birthDate.trim()) form.append('birth_date', birthDate.trim());
         form.append('professional_title', professionalTitle);
         form.append('professional_institution', professionalInstitution);
         form.append('senescyt_number', senescytNumber);
@@ -106,13 +108,15 @@ const EditProfile: React.FC = () => {
         } as unknown as Blob);
         body = form;
       } else {
-        body = {
+        const jsonBody: Record<string, string> = {
           username,
           bio,
           professional_title: professionalTitle,
           professional_institution: professionalInstitution,
           senescyt_number: senescytNumber,
         };
+        if (birthDate.trim()) jsonBody.birth_date = birthDate.trim();
+        body = jsonBody;
       }
 
       const updated = await updateUserProfile(user.id, body, accessToken);
@@ -187,6 +191,26 @@ const EditProfile: React.FC = () => {
             numberOfLines={3}
             placeholder="Contá algo sobre vos..."
           />
+
+          <Text style={styles.fieldLabel}>Fecha de nacimiento</Text>
+          <TextInput
+            style={styles.input}
+            value={birthDate}
+            onChangeText={setBirthDate}
+            placeholder="AAAA-MM-DD"
+            keyboardType="numbers-and-punctuation"
+            maxLength={10}
+          />
+          {user?.is_adult ? (
+            <View style={styles.adultBadge}>
+              <AntDesign name="checkcircle" size={14} color="#27ae60" />
+              <Text style={styles.adultBadgeText}>Mayor de edad verificado</Text>
+            </View>
+          ) : (
+            <Text style={styles.birthDateHint}>
+              Necesitás ser mayor de 18 años para usar el chat. Ingresá tu fecha en formato AAAA-MM-DD.
+            </Text>
+          )}
         </View>
 
         {/* Perfil profesional */}
@@ -359,6 +383,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   verifiedBannerText: { color: '#27ae60', fontWeight: 'bold', fontSize: 14, marginLeft: 6 },
+  adultBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 6,
+  },
+  adultBadgeText: { color: '#27ae60', fontSize: 13, fontWeight: '600' },
+  birthDateHint: { fontSize: 12, color: '#888', marginTop: 4, lineHeight: 16 },
 });
 
 export default EditProfile;
