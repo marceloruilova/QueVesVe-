@@ -55,7 +55,7 @@ const UserProfile: React.FC = () => {
           setFollowersCount(prof.followers_count);
           setVideos(vids);
         })
-        .catch(() => Alert.alert('Error', 'No se pudo cargar el perfil.'))
+        .catch((err: unknown) => Alert.alert('Error', err instanceof Error ? err.message : 'No se pudo cargar el perfil.'))
         .finally(() => setLoading(false));
     }, [userId, accessToken]),
   );

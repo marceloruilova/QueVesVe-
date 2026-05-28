@@ -92,7 +92,11 @@ export async function getUserProfile(
   } catch {
     throw new Error('No se pudo conectar con el servidor.');
   }
-  if (!res.ok) throw new Error('Failed to fetch user profile');
+  if (!res.ok) {
+    let body = '';
+    try { body = await res.text(); } catch { /* ignore */ }
+    throw new Error(`Error ${res.status} al cargar perfil: ${body || res.statusText}`);
+  }
   try {
     return await res.json();
   } catch {

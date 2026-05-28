@@ -116,7 +116,13 @@ const Feed: React.FC<Props> = ({ play, item }) => {
         ) : null}
       </Container>
       <Details>
-        <TouchableOpacity onPress={() => navigation.navigate('UserProfile', { userId: item.user_id })}>
+        <TouchableOpacity
+          onPress={() => {
+            if (item.user_id) {
+              navigation.navigate('UserProfile', { userId: item.user_id });
+            }
+          }}
+        >
           <User>{item.username}</User>
         </TouchableOpacity>
         <Tags>{item.tags}</Tags>
