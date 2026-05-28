@@ -489,14 +489,11 @@ export async function createOrGetConversation(
     throw new Error('No se pudo conectar con el servidor.');
   }
   if (!res.ok) {
-    const data = await res.json().catch(() => ({}) as { error?: string; chat_blocked?: string });
-    if ((data as { chat_blocked?: string }).chat_blocked) {
-      throw new ChatBlockedError(
-        (data as { error?: string }).error ?? 'Chat no disponible.',
-        (data as { chat_blocked: string }).chat_blocked,
-      );
+    const data = (await res.json().catch(() => ({}))) as { error?: string; chat_blocked?: string };
+    if (data.chat_blocked) {
+      throw new ChatBlockedError(data.error ?? 'Chat no disponible.', data.chat_blocked);
     }
-    throw new Error((data as { error?: string }).error ?? 'Error al iniciar conversación.');
+    throw new Error(data.error ?? 'Error al iniciar conversación.');
   }
   return res.json();
 }
@@ -533,12 +530,9 @@ export async function sendMessage(
     throw new Error('No se pudo conectar con el servidor.');
   }
   if (!res.ok) {
-    const data = await res.json().catch(() => ({}) as { error?: string; chat_blocked?: string });
-    if ((data as { chat_blocked?: string }).chat_blocked) {
-      throw new ChatBlockedError(
-        (data as { error?: string }).error ?? 'Chat no disponible.',
-        (data as { chat_blocked: string }).chat_blocked,
-      );
+    const data = (await res.json().catch(() => ({}))) as { error?: string; chat_blocked?: string };
+    if (data.chat_blocked) {
+      throw new ChatBlockedError(data.error ?? 'Chat no disponible.', data.chat_blocked);
     }
     throw new Error('Error al enviar mensaje.');
   }
