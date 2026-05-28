@@ -67,7 +67,7 @@ export async function registerUser(
   } catch {
     throw new Error('No se pudo conectar con el servidor.');
   }
-  let data: { username?: string[]; email?: string[]; [key: string]: unknown };
+  let data: { username?: string[]; email?: string[]; password?: string[]; [key: string]: unknown };
   try {
     data = await res.json();
   } catch {
