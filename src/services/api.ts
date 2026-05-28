@@ -73,7 +73,7 @@ export async function registerUser(
   } catch {
     throw new Error('Error del servidor. Intentá de nuevo.');
   }
-  if (!res.ok) throw new Error(data?.username?.[0] || data?.email?.[0] || 'Registration failed');
+  if (!res.ok) throw new Error(data?.password?.[0] || data?.username?.[0] || data?.email?.[0] || 'Registration failed');
   return data as unknown as RegisterResponse;
 }
 
@@ -420,6 +420,122 @@ export async function recordView(videoId: number, accessToken: string): Promise<
     // silently ignore view tracking errors
   }
 }
+
+// ─── Direct Messages ────────────────────────────────────────────────────────
+
+export interface OtherParticipant {
+  id: number;
+  username: string;
+  profile_picture: string | null;
+}
+
+export interface LastMessage {
+  text: string;
+  sender_id: number;
+  created_at: string;
+}
+
+export interface ConversationItem {
+  id: number;
+  other_participant: OtherParticipant | null;
+  last_message: LastMessage | null;
+  unread_count: number;
+  updated_at: string;
+}
+
+export interface MessageItem {
+  id: number;
+  sender_id: number;
+  sender_username: string;
+  text: string;
+  created_at: string;
+  is_read: boolean;
+}
+
+export async function getConversations(accessToken: string): Promise<ConversationItem[]> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/messages/conversations/`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  if (!res.ok) throw new Error('Error al cargar conversaciones.');
+  return res.json();
+}
+
+export async function createOrGetConversation(
+  recipientId: number,
+  accessToken: string,
+): Promise<ConversationItem> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/messages/conversations/`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recipient_id: recipientId }),
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error((data as { error?: string }).error ?? 'Error al iniciar conversación.');
+  }
+  return res.json();
+}
+
+export async function getMessages(
+  conversationId: number,
+  accessToken: string,
+): Promise<MessageItem[]> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/messages/conversations/${conversationId}/messages/`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  if (!res.ok) throw new Error('Error al cargar mensajes.');
+  return res.json();
+}
+
+export async function sendMessage(
+  conversationId: number,
+  text: string,
+  accessToken: string,
+): Promise<MessageItem> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/messages/conversations/${conversationId}/messages/`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  if (!res.ok) throw new Error('Error al enviar mensaje.');
+  return res.json();
+}
+
+export async function markConversationRead(
+  conversationId: number,
+  accessToken: string,
+): Promise<void> {
+  try {
+    await fetch(`${API_BASE_URL}/messages/conversations/${conversationId}/read/`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    // silently ignore read tracking errors
+  }
+}
+
+// ─── JWT ────────────────────────────────────────────────────────────────────
 
 export function decodeJWT(token: string): { user_id: number; [key: string]: unknown } {
   try {

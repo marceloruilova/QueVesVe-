@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ActivityIndicator } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { ActivityIndicator, View, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '../../contexts/AuthContext';
@@ -18,6 +18,20 @@ import {
 
 type AuthStackParams = { Login: undefined; Register: undefined };
 
+interface PasswordRequirement {
+  label: string;
+  met: boolean;
+}
+
+function getPasswordRequirements(password: string): PasswordRequirement[] {
+  return [
+    { label: 'Mínimo 8 caracteres', met: password.length >= 8 },
+    { label: '1 letra mayúscula', met: /[A-Z]/.test(password) },
+    { label: '1 letra minúscula', met: /[a-z]/.test(password) },
+    { label: '1 número', met: /\d/.test(password) },
+  ];
+}
+
 const Register: React.FC = () => {
   const { register } = useAuth();
   const navigation = useNavigation<StackNavigationProp<AuthStackParams>>();
@@ -26,10 +40,18 @@ const Register: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [passwordTouched, setPasswordTouched] = useState(false);
+
+  const requirements = useMemo(() => getPasswordRequirements(password), [password]);
+  const passwordValid = requirements.every(r => r.met);
 
   const handleRegister = async () => {
     if (!username || !email || !password) {
-      setError('Please fill in all fields');
+      setError('Por favor completá todos los campos.');
+      return;
+    }
+    if (!passwordValid) {
+      setError('La contraseña no cumple los requisitos de seguridad.');
       return;
     }
     setLoading(true);
@@ -37,7 +59,7 @@ const Register: React.FC = () => {
     try {
       await register(username, email, password);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Registration failed');
+      setError(e instanceof Error ? e.message : 'Error al registrarse.');
     } finally {
       setLoading(false);
     }
@@ -46,12 +68,12 @@ const Register: React.FC = () => {
   return (
     <Container>
       <Logo>QueVesVe!&</Logo>
-      <Subtitle>Create your account</Subtitle>
+      <Subtitle>Creá tu cuenta</Subtitle>
 
       {error ? <ErrorText>{error}</ErrorText> : null}
 
       <Input
-        placeholder="Username"
+        placeholder="Usuario"
         autoCapitalize="none"
         value={username}
         onChangeText={setUsername}
@@ -64,24 +86,40 @@ const Register: React.FC = () => {
         onChangeText={setEmail}
       />
       <Input
-        placeholder="Password"
+        placeholder="Contraseña"
         secureTextEntry
         value={password}
-        onChangeText={setPassword}
+        onChangeText={text => {
+          setPassword(text);
+          setPasswordTouched(true);
+        }}
       />
 
-      <Button onPress={handleRegister} disabled={loading}>
+      {passwordTouched && (
+        <View style={{ width: '100%', paddingHorizontal: 24, marginBottom: 8 }}>
+          {requirements.map(req => (
+            <Text
+              key={req.label}
+              style={{ fontSize: 12, color: req.met ? '#22c55e' : '#ef4444', marginBottom: 2 }}
+            >
+              {req.met ? '✓' : '✗'} {req.label}
+            </Text>
+          ))}
+        </View>
+      )}
+
+      <Button onPress={handleRegister} disabled={loading || !passwordValid}>
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <ButtonText>Sign Up</ButtonText>
+          <ButtonText>Registrarse</ButtonText>
         )}
       </Button>
 
       <Footer>
-        <FooterText>Already have an account? </FooterText>
+        <FooterText>¿Ya tenés una cuenta? </FooterText>
         <FooterLink onPress={() => navigation.navigate('Login')}>
-          Log in
+          Iniciar sesión
         </FooterLink>
       </Footer>
     </Container>

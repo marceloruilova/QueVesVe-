@@ -14,6 +14,7 @@ import Discover from '../pages/Discover';
 import EditProfile from '../pages/EditProfile';
 import Home from '../pages/Home';
 import Inbox from '../pages/Inbox';
+import ConversationScreen from '../pages/Inbox/ConversationScreen';
 import Me from '../pages/Me';
 import Record from '../pages/Record';
 import UploadVideo from '../pages/Record/UploadVideo';
@@ -140,6 +141,11 @@ const RootStackScreen: React.FC = () => {
       <Stack.Screen
         name="EditProfile"
         component={EditProfile}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Conversation"
+        component={ConversationScreen}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

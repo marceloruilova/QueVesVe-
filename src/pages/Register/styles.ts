@@ -33,8 +33,8 @@ export const Input = styled.TextInput`
   background-color: #fafafa;
 `;
 
-export const Button = styled.TouchableOpacity`
-  background-color: #F5A623;
+export const Button = styled.TouchableOpacity<{ disabled?: boolean }>`
+  background-color: ${({ disabled }) => (disabled ? '#ccc' : '#F5A623')};
   border-radius: 4px;
   padding: 14px;
   align-items: center;
