@@ -109,6 +109,7 @@ export interface FeedItem {
   user_id: number;
   username: string;
   profile_picture: string | null;
+  description: string;
   tags: string;
   music: string;
   likes: number;
@@ -116,6 +117,15 @@ export interface FeedItem {
   liked_by_user: boolean;
   uri: string | null;
   thumbnail_url: string | null;
+  views_count: number | null;
+}
+
+export interface UserSearchItem {
+  id: number;
+  username: string;
+  profile_picture: string | null;
+  followers_count: number;
+  is_following: boolean;
 }
 
 export interface CommentItem {
@@ -346,6 +356,68 @@ export async function unfollowUser(userId: number, accessToken: string): Promise
     return await res.json();
   } catch {
     throw new Error('Error del servidor. Intentá de nuevo.');
+  }
+}
+
+export async function searchUsers(query: string, accessToken: string): Promise<UserSearchItem[]> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/users/search/?q=${encodeURIComponent(query)}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  if (!res.ok) throw new Error('Error al buscar usuarios');
+  try {
+    return await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
+}
+
+export async function searchVideos(query: string, accessToken: string): Promise<FeedItem[]> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/videos/search/?q=${encodeURIComponent(query)}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  if (!res.ok) throw new Error('Error al buscar videos');
+  try {
+    return await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
+}
+
+export async function getTopVideos(accessToken: string): Promise<FeedItem[]> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/videos/top/`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  if (!res.ok) throw new Error('Error al obtener top videos');
+  try {
+    return await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
+}
+
+export async function recordView(videoId: number, accessToken: string): Promise<void> {
+  try {
+    await fetch(`${API_BASE_URL}/videos/${videoId}/view/`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    // silently ignore view tracking errors
   }
 }
 

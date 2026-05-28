@@ -9,7 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
 
 import { useAuth } from '../../../contexts/AuthContext';
-import { toggleLike } from '../../../services/api';
+import { toggleLike, recordView } from '../../../services/api';
 import { RootStackParamList } from '../../../types/navigation';
 import CommentsModal from './CommentsModal';
 import musicFly from '../../../assets/lottie-animations/music-fly.json';
@@ -52,6 +52,12 @@ const Feed: React.FC<Props> = ({ play, item }) => {
   const [showComments, setShowComments] = useState(false);
 
   const spinValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (play && accessToken) {
+      recordView(item.id, accessToken);
+    }
+  }, [play]);
 
   useEffect(() => {
     const anim = Animated.loop(
