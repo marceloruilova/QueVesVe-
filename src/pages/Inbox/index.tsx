@@ -119,7 +119,7 @@ const Inbox: React.FC = () => {
 
       {notAdult && (
         <View style={inboxStyles.banner}>
-          <AntDesign name="exclamationcircleo" size={18} color="#D4891A" style={{ marginTop: 2 }} />
+          <AntDesign name="warning" size={18} color="#D4891A" style={{ marginTop: 2 }} />
           <View style={{ flex: 1 }}>
             <Text style={inboxStyles.bannerTitle}>Para usar el chat necesitás:</Text>
             <Text style={inboxStyles.bannerItem}>• Agregar tu fecha de nacimiento en tu perfil</Text>

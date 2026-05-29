@@ -14,6 +14,8 @@ export default {
     },
     updates: {
       fallbackToCacheTimeout: 0,
+      enabled: false,
+      checkAutomatically: 'NEVER',
     },
     assetBundlePatterns: ['**/*'],
     android: {

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
+import { Alert, FlatList, KeyboardAvoidingView, Platform, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
+import { Feather, AntDesign } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { getMessages, sendMessage, markConversationRead, ChatBlockedError, MessageItem } from '../../services/api';
 import { RootStackParamList } from '../../types/navigation';
@@ -22,6 +22,8 @@ function formatTime(dateStr: string): string {
   return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
+const OWN_AGE_CODES = ['age_missing', 'underage'];
+
 const ConversationScreen: React.FC = () => {
   const { accessToken, user } = useAuth();
   const navigation = useNavigation();
@@ -31,6 +33,7 @@ const ConversationScreen: React.FC = () => {
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
+  const [blockedReason, setBlockedReason] = useState<{ message: string; code: string } | null>(null);
   const listRef = useRef<FlatList>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -67,11 +70,17 @@ const ConversationScreen: React.FC = () => {
     setInputText('');
     try {
       const newMsg = await sendMessage(conversationId, text, accessToken);
+      setBlockedReason(null);
       setMessages(prev => [...prev, newMsg]);
     } catch (err) {
       setInputText(text);
       if (err instanceof ChatBlockedError) {
-        Alert.alert('Chat no disponible', err.message);
+        setBlockedReason({ message: err.message, code: err.reason });
+      } else {
+        Alert.alert(
+          'Error al enviar',
+          err instanceof Error ? err.message : 'No se pudo enviar el mensaje. Intentá de nuevo.',
+        );
       }
     } finally {
       setSending(false);
@@ -110,22 +119,61 @@ const ConversationScreen: React.FC = () => {
           contentContainerStyle={{ paddingVertical: 8 }}
         />
 
-        <InputRow>
-          <MessageInput
-            value={inputText}
-            onChangeText={setInputText}
-            placeholder="Escribí un mensaje..."
-            multiline
-            returnKeyType="send"
-            onSubmitEditing={handleSend}
-          />
-          <SendButton disabled={!inputText.trim() || sending} onPress={handleSend}>
-            <Feather name="send" size={18} color="#fff" />
-          </SendButton>
-        </InputRow>
+        {blockedReason ? (
+          <View style={blockedStyles.banner}>
+            <AntDesign name="lock" size={18} color="#E5363A" style={{ marginTop: 2 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={blockedStyles.bannerTitle}>Chat no disponible</Text>
+              <Text style={blockedStyles.bannerMessage}>{blockedReason.message}</Text>
+              {OWN_AGE_CODES.includes(blockedReason.code) && (
+                <TouchableOpacity
+                  style={blockedStyles.bannerButton}
+                  onPress={() => (navigation as any).navigate('EditProfile')}
+                >
+                  <Text style={blockedStyles.bannerButtonText}>Actualizar mi perfil →</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        ) : (
+          <InputRow>
+            <MessageInput
+              value={inputText}
+              onChangeText={setInputText}
+              placeholder="Escribí un mensaje..."
+              multiline
+              returnKeyType="send"
+              onSubmitEditing={handleSend}
+            />
+            <SendButton disabled={!inputText.trim() || sending} onPress={handleSend}>
+              <Feather name="send" size={18} color="#fff" />
+            </SendButton>
+          </InputRow>
+        )}
       </KeyboardAvoidingView>
     </ChatContainer>
   );
 };
+
+const blockedStyles = StyleSheet.create({
+  banner: {
+    flexDirection: 'row',
+    gap: 10,
+    backgroundColor: '#fff0f0',
+    borderTopWidth: 1,
+    borderTopColor: '#E5363A',
+    padding: 14,
+  },
+  bannerTitle: { fontSize: 14, fontWeight: 'bold', color: '#E5363A', marginBottom: 4 },
+  bannerMessage: { fontSize: 13, color: '#555', lineHeight: 18 },
+  bannerButton: {
+    marginTop: 10,
+    backgroundColor: '#F5A623',
+    borderRadius: 6,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  bannerButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
+});
 
 export default ConversationScreen;
