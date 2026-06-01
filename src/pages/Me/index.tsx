@@ -7,7 +7,6 @@ import {
   View,
   Text,
   Dimensions,
-  ActivityIndicator,
 } from 'react-native';
 
 import { MaterialIcons, AntDesign, FontAwesome } from '@expo/vector-icons';
@@ -19,6 +18,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { getUserVideos, resendVerificationEmail, FeedItem } from '../../services/api';
 import { RootStackParamList } from '../../types/navigation';
 
+import EmailVerificationBanner from './EmailVerificationBanner';
 import {
   Container,
   Title,
@@ -81,43 +81,11 @@ const Me: React.FC = () => {
       <Username>@{user?.username ?? ''}</Username>
 
       {user && !user.email_verified && (
-        <View style={{
-          backgroundColor: '#FFF8ED',
-          borderWidth: 1,
-          borderColor: '#F5A623',
-          borderRadius: 8,
-          padding: 12,
-          marginHorizontal: 16,
-          marginBottom: 12,
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 8,
-        }}>
-          <AntDesign name="mail" size={18} color="#F5A623" />
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 13, color: '#333', fontWeight: '600' }}>
-              Verificá tu email
-            </Text>
-            <Text style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
-              Revisá tu bandeja o reenviá el correo.
-            </Text>
-          </View>
-          <TouchableOpacity
-            onPress={handleResendVerification}
-            disabled={resendLoading}
-            style={{
-              backgroundColor: '#F5A623',
-              borderRadius: 6,
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-            }}
-          >
-            {resendLoading
-              ? <ActivityIndicator size="small" color="#fff" />
-              : <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }}>Reenviar</Text>
-            }
-          </TouchableOpacity>
-        </View>
+        <EmailVerificationBanner
+          email={user.email}
+          loading={resendLoading}
+          onResend={handleResendVerification}
+        />
       )}
 
       <Stats>

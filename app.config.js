@@ -3,7 +3,7 @@ export default {
     name: 'QueVesVe!&',
     slug: 'quevesve',
     privacy: 'public',
-    platforms: ['ios', 'android'],
+    platforms: ['ios', 'android', 'web'],
     version: '1.0.0',
     orientation: 'portrait',
     icon: './src/assets/leaf.png',
