@@ -14,6 +14,7 @@ export interface User {
   senescyt_verified_at: string | null;
   birth_date: string | null;
   is_adult: boolean;
+  email_verified: boolean;
   followers_count: number;
   following_count: number;
   is_following: boolean;
@@ -551,6 +552,26 @@ export async function markConversationRead(
   } catch {
     // silently ignore read tracking errors
   }
+}
+
+export async function resendVerificationEmail(accessToken: string): Promise<{ detail: string }> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/users/resend-verification/`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  let data: { detail?: string; [key: string]: unknown };
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
+  if (!res.ok) throw new Error(data?.detail ?? 'Error al reenviar email.');
+  return data as { detail: string };
 }
 
 // ─── JWT ────────────────────────────────────────────────────────────────────

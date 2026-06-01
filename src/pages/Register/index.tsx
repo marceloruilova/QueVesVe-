@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ActivityIndicator, View, Text } from 'react-native';
+import { ActivityIndicator, Alert, View, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '../../contexts/AuthContext';
@@ -58,6 +58,10 @@ const Register: React.FC = () => {
     setError('');
     try {
       await register(username, email, password);
+      Alert.alert(
+        '¡Cuenta creada!',
+        `Te enviamos un email a ${email} para verificar tu cuenta. Podés usarla mientras tanto.`,
+      );
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Error al registrarse.');
     } finally {
