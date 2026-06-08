@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { loginUser, registerUser, getUserProfile, decodeJWT, User } from '../services/api';
+import { loginUser, registerUser, getUserProfile, decodeJWT, socialAuth, User } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -8,6 +8,7 @@ interface AuthContextType {
   loading: boolean;
   login: (username: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
+  socialLogin: (provider: 'google' | 'facebook', token: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (updated: User) => void;
 }
@@ -61,6 +62,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     await AsyncStorage.setItem('userId', String(data.user.id));
   };
 
+  const socialLoginFn = async (provider: 'google' | 'facebook', token: string) => {
+    const data = await socialAuth(provider, token);
+    setAccessToken(data.access);
+    setUser(data.user);
+    await AsyncStorage.setItem('accessToken', data.access);
+    await AsyncStorage.setItem('refreshToken', data.refresh);
+    await AsyncStorage.setItem('userId', String(data.user.id));
+  };
+
   const logout = async () => {
     setUser(null);
     setAccessToken(null);
@@ -72,7 +82,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, accessToken, loading, login, register, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, accessToken, loading, login, register, socialLogin: socialLoginFn, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

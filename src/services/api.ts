@@ -38,6 +38,30 @@ export interface RegisterResponse {
   access: string;
 }
 
+export async function socialAuth(
+  provider: 'google' | 'facebook',
+  token: string,
+): Promise<RegisterResponse> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/users/social-auth/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider, token }),
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  let data: { error?: string; [key: string]: unknown };
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
+  if (!res.ok) throw new Error(data?.error ?? 'Error con autenticación social.');
+  return data as unknown as RegisterResponse;
+}
+
 export async function loginUser(
   username: string,
   password: string,

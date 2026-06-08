@@ -70,3 +70,45 @@ export const ErrorText = styled.Text`
   text-align: center;
   margin-bottom: 12px;
 `;
+
+export const Divider = styled.View`
+  flex-direction: row;
+  align-items: center;
+  margin: 20px 0 16px;
+`;
+
+export const DividerLine = styled.View`
+  flex: 1;
+  height: 1px;
+  background-color: #e6e6e6;
+`;
+
+export const DividerText = styled.Text`
+  color: #8f8f91;
+  font-size: 13px;
+  padding: 0 12px;
+`;
+
+export const SocialButtonsRow = styled.View`
+  flex-direction: row;
+  gap: 8px;
+`;
+
+export const SocialButton = styled.TouchableOpacity<{ bgColor: string; borderColor?: string }>`
+  flex: 1;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  background-color: ${({ bgColor }) => bgColor};
+  border-width: ${({ borderColor }) => (borderColor ? '1px' : '0px')};
+  border-color: ${({ borderColor }) => borderColor ?? 'transparent'};
+  border-radius: 4px;
+  padding: 13px 8px;
+  gap: 6px;
+`;
+
+export const SocialButtonText = styled.Text<{ textColor: string }>`
+  color: ${({ textColor }) => textColor};
+  font-size: 14px;
+  font-weight: 600;
+`;

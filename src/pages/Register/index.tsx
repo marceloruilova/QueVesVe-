@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { ActivityIndicator, Alert, View, Text } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSocialAuth } from '../../hooks/useSocialAuth';
 import {
   Container,
   Logo,
@@ -14,6 +16,12 @@ import {
   FooterText,
   FooterLink,
   ErrorText,
+  Divider,
+  DividerLine,
+  DividerText,
+  SocialButtonsRow,
+  SocialButton,
+  SocialButtonText,
 } from './styles';
 
 type AuthStackParams = { Login: undefined; Register: undefined };
@@ -42,6 +50,8 @@ const Register: React.FC = () => {
   const [error, setError] = useState('');
   const [passwordTouched, setPasswordTouched] = useState(false);
 
+  const { handleGoogle, handleFacebook, socialLoading, socialError } = useSocialAuth();
+
   const requirements = useMemo(() => getPasswordRequirements(password), [password]);
   const passwordValid = requirements.every(r => r.met);
 
@@ -69,18 +79,22 @@ const Register: React.FC = () => {
     }
   };
 
+  const isbusy = loading || socialLoading;
+
   return (
     <Container>
       <Logo>QueVesVe!&</Logo>
       <Subtitle>Creá tu cuenta</Subtitle>
 
       {error ? <ErrorText>{error}</ErrorText> : null}
+      {socialError ? <ErrorText>{socialError}</ErrorText> : null}
 
       <Input
         placeholder="Usuario"
         autoCapitalize="none"
         value={username}
         onChangeText={setUsername}
+        editable={!isbusy}
       />
       <Input
         placeholder="Email"
@@ -88,6 +102,7 @@ const Register: React.FC = () => {
         keyboardType="email-address"
         value={email}
         onChangeText={setEmail}
+        editable={!isbusy}
       />
       <Input
         placeholder="Contraseña"
@@ -97,6 +112,7 @@ const Register: React.FC = () => {
           setPassword(text);
           setPasswordTouched(true);
         }}
+        editable={!isbusy}
       />
 
       {passwordTouched && (
@@ -112,13 +128,52 @@ const Register: React.FC = () => {
         </View>
       )}
 
-      <Button onPress={handleRegister} disabled={loading || !passwordValid}>
+      <Button onPress={handleRegister} disabled={isbusy || !passwordValid}>
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
           <ButtonText>Registrarse</ButtonText>
         )}
       </Button>
+
+      <Divider>
+        <DividerLine />
+        <DividerText>o continuar con</DividerText>
+        <DividerLine />
+      </Divider>
+
+      <SocialButtonsRow>
+        <SocialButton
+          bgColor="#fff"
+          borderColor="#e6e6e6"
+          onPress={handleGoogle}
+          disabled={isbusy}
+        >
+          {socialLoading ? (
+            <ActivityIndicator color="#EA4335" size="small" />
+          ) : (
+            <>
+              <MaterialCommunityIcons name="google" size={18} color="#EA4335" />
+              <SocialButtonText textColor="#1A1A1A">Google</SocialButtonText>
+            </>
+          )}
+        </SocialButton>
+
+        <SocialButton
+          bgColor="#1877F2"
+          onPress={handleFacebook}
+          disabled={isbusy}
+        >
+          {socialLoading ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <>
+              <MaterialCommunityIcons name="facebook" size={18} color="#fff" />
+              <SocialButtonText textColor="#fff">Facebook</SocialButtonText>
+            </>
+          )}
+        </SocialButton>
+      </SocialButtonsRow>
 
       <Footer>
         <FooterText>¿Ya tenés una cuenta? </FooterText>
