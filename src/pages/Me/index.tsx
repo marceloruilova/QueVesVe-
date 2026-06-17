@@ -9,7 +9,7 @@ import {
   Dimensions,
 } from 'react-native';
 
-import { MaterialIcons, AntDesign, FontAwesome } from '@expo/vector-icons';
+import { MaterialIcons, AntDesign, FontAwesome, Feather } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
@@ -69,9 +69,9 @@ const Me: React.FC = () => {
   );
 
   const handleLogout = () => {
-    Alert.alert('Log out', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Log out', style: 'destructive', onPress: logout },
+    Alert.alert('Cerrar sesión', '¿Seguro que querés cerrar sesión?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Cerrar sesión', style: 'destructive', onPress: logout },
     ]);
   };
 
@@ -118,11 +118,11 @@ const Me: React.FC = () => {
       </Stats>
       <ProfileColumn>
         <ProfileEdit onPress={() => navigation.navigate('EditProfile')}>
-          <ProfileText>Edit profile</ProfileText>
+          <ProfileText>Editar perfil</ProfileText>
         </ProfileEdit>
         <Bookmark name="bookmark" size={24} color="black" />
       </ProfileColumn>
-      <StatsText>{user?.bio || 'Tap to add bio'}</StatsText>
+      <StatsText>{user?.bio || 'Tocá para agregar una bio'}</StatsText>
     </Content>
   );
 
@@ -138,10 +138,11 @@ const Me: React.FC = () => {
         <Title>{user?.username ?? ''}</Title>
         <MaterialIcons name="arrow-drop-down" size={24} color="black" />
         <TouchableOpacity
-          style={{ position: 'absolute', right: 13, top: 12 }}
+          style={{ position: 'absolute', right: 4, top: 2, padding: 12 }}
           onPress={handleLogout}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
         >
-          <FontAwesome name="ellipsis-v" size={24} color="black" />
+          <Feather name="log-out" size={22} color="#555" />
         </TouchableOpacity>
       </Header>
 
