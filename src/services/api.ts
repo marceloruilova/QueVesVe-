@@ -393,10 +393,16 @@ export async function unfollowUser(userId: number, accessToken: string): Promise
   }
 }
 
-export async function searchUsers(query: string, accessToken: string): Promise<UserSearchItem[]> {
+export async function searchUsers(
+  query: string,
+  accessToken: string,
+  offset = 0,
+): Promise<UserSearchItem[]> {
   let res: Response;
+  const params = new URLSearchParams({ offset: String(offset) });
+  if (query.trim()) params.set('q', query.trim());
   try {
-    res = await fetch(`${API_BASE_URL}/users/search/?q=${encodeURIComponent(query)}`, {
+    res = await fetch(`${API_BASE_URL}/users/search/?${params.toString()}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
   } catch {

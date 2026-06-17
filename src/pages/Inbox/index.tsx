@@ -55,7 +55,11 @@ const Inbox: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<UserSearchItem[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const [newChatLoadingId, setNewChatLoadingId] = useState<number | null>(null);
+  const PAGE_SIZE = 10;
 
   const fetchConversations = useCallback(async () => {
     if (!accessToken) return;
@@ -67,30 +71,48 @@ const Inbox: React.FC = () => {
     }
   }, [accessToken]);
 
+  // Carga inicial o por cambio de query (siempre desde offset 0)
   useEffect(() => {
     if (!showNewChat || !accessToken) return;
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
     const timer = setTimeout(async () => {
       setSearchLoading(true);
+      setOffset(0);
+      setHasMore(true);
       try {
-        const results = await searchUsers(searchQuery, accessToken);
+        const results = await searchUsers(searchQuery, accessToken, 0);
         setSearchResults(results);
+        if (results.length < PAGE_SIZE) setHasMore(false);
       } catch {
         // ignore search errors
       } finally {
         setSearchLoading(false);
       }
-    }, 400);
+    }, searchQuery.trim() ? 400 : 0);
     return () => clearTimeout(timer);
   }, [searchQuery, showNewChat, accessToken]);
+
+  const loadMore = async () => {
+    if (!accessToken || loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    const nextOffset = offset + PAGE_SIZE;
+    try {
+      const results = await searchUsers(searchQuery, accessToken, nextOffset);
+      setSearchResults(prev => [...prev, ...results]);
+      setOffset(nextOffset);
+      if (results.length < PAGE_SIZE) setHasMore(false);
+    } catch {
+      // ignore load-more errors
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const closeNewChat = () => {
     setShowNewChat(false);
     setSearchQuery('');
     setSearchResults([]);
+    setOffset(0);
+    setHasMore(true);
   };
 
   const handleNewChatSelect = async (targetUser: UserSearchItem) => {
@@ -217,6 +239,8 @@ const Inbox: React.FC = () => {
             <FlatList
               data={searchResults}
               keyExtractor={item => String(item.id)}
+              onEndReached={loadMore}
+              onEndReachedThreshold={0.3}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={newChatStyles.userRow}
@@ -239,11 +263,16 @@ const Inbox: React.FC = () => {
                 </TouchableOpacity>
               )}
               ListEmptyComponent={
-                searchQuery.trim() ? (
-                  <Text style={newChatStyles.empty}>No se encontraron usuarios.</Text>
-                ) : (
-                  <Text style={newChatStyles.empty}>Escribí un nombre para buscar.</Text>
-                )
+                <Text style={newChatStyles.empty}>
+                  {searchQuery.trim() ? 'No se encontraron usuarios.' : 'No hay usuarios todavía.'}
+                </Text>
+              }
+              ListFooterComponent={
+                loadingMore ? (
+                  <ActivityIndicator style={{ marginVertical: 12 }} color="#F5A623" />
+                ) : !hasMore && searchResults.length > 0 ? (
+                  <Text style={newChatStyles.footerEnd}>No hay más usuarios</Text>
+                ) : null
               }
             />
           )}
@@ -316,6 +345,7 @@ const newChatStyles = StyleSheet.create({
   avatarInitial: { fontSize: 18, fontWeight: 'bold', color: '#666' },
   username: { flex: 1, marginLeft: 12, fontSize: 15, fontWeight: '500', color: '#1a1a1a' },
   empty: { textAlign: 'center', color: '#888', marginTop: 40, fontSize: 14 },
+  footerEnd: { textAlign: 'center', color: '#ccc', fontSize: 12, marginVertical: 16 },
 });
 
 const inboxStyles = StyleSheet.create({

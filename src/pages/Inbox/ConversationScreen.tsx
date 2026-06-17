@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Platform, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Feather, AntDesign } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
@@ -29,6 +30,8 @@ const ConversationScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<RouteProp<RootStackParamList, 'Conversation'>>();
   const { conversationId, otherUsername } = route.params;
+
+  const insets = useSafeAreaInsets();
 
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [inputText, setInputText] = useState('');
@@ -123,18 +126,18 @@ const ConversationScreen: React.FC = () => {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 44 : 0}
       >
         <FlatList
           ref={listRef}
           data={messages}
           keyExtractor={item => String(item.id)}
           renderItem={renderMessage}
-          contentContainerStyle={{ paddingVertical: 8 }}
+          contentContainerStyle={{ paddingVertical: 8, paddingBottom: 4 }}
         />
 
         {blockedReason ? (
-          <View style={blockedStyles.banner}>
+          <View style={[blockedStyles.banner, { paddingBottom: insets.bottom + 14 }]}>
             <AntDesign name="lock" size={18} color="#E5363A" style={{ marginTop: 2 }} />
             <View style={{ flex: 1 }}>
               <Text style={blockedStyles.bannerTitle}>Chat no disponible</Text>
@@ -150,7 +153,7 @@ const ConversationScreen: React.FC = () => {
             </View>
           </View>
         ) : (
-          <InputRow>
+          <InputRow style={{ paddingBottom: insets.bottom + 8 }}>
             <MessageInput
               value={inputText}
               onChangeText={setInputText}
