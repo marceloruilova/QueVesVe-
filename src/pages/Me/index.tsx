@@ -89,15 +89,27 @@ const Me: React.FC = () => {
       )}
 
       <Stats>
-        <StatsColumn>
-          <StatsNumber>{user?.following_count ?? 0}</StatsNumber>
-          <StatsText>Siguiendo</StatsText>
-        </StatsColumn>
+        <TouchableOpacity
+          onPress={() =>
+            user && navigation.navigate('FollowList', { userId: user.id, type: 'following', title: 'Siguiendo' })
+          }
+        >
+          <StatsColumn>
+            <StatsNumber>{user?.following_count ?? 0}</StatsNumber>
+            <StatsText>Siguiendo</StatsText>
+          </StatsColumn>
+        </TouchableOpacity>
         <Separator>|</Separator>
-        <StatsColumn>
-          <StatsNumber>{user?.followers_count ?? 0}</StatsNumber>
-          <StatsText>Seguidores</StatsText>
-        </StatsColumn>
+        <TouchableOpacity
+          onPress={() =>
+            user && navigation.navigate('FollowList', { userId: user.id, type: 'followers', title: 'Seguidores' })
+          }
+        >
+          <StatsColumn>
+            <StatsNumber>{user?.followers_count ?? 0}</StatsNumber>
+            <StatsText>Seguidores</StatsText>
+          </StatsColumn>
+        </TouchableOpacity>
         <Separator>|</Separator>
         <StatsColumn>
           <StatsNumber>{videos.length}</StatsNumber>

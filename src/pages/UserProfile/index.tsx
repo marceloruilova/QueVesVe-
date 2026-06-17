@@ -128,15 +128,37 @@ const UserProfile: React.FC = () => {
 
       {/* Stats */}
       <View style={styles.stats}>
-        <View style={styles.statsColumn}>
-          <Text style={styles.statsNumber}>{profile.following_count}</Text>
-          <Text style={styles.statsLabel}>Siguiendo</Text>
-        </View>
+        {isOwnProfile ? (
+          <TouchableOpacity
+            onPress={() => navigation.navigate('FollowList', { userId, type: 'following', title: 'Siguiendo' })}
+          >
+            <View style={styles.statsColumn}>
+              <Text style={styles.statsNumber}>{profile.following_count}</Text>
+              <Text style={styles.statsLabel}>Siguiendo</Text>
+            </View>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.statsColumn}>
+            <Text style={styles.statsNumber}>{profile.following_count}</Text>
+            <Text style={styles.statsLabel}>Siguiendo</Text>
+          </View>
+        )}
         <Text style={styles.separator}>|</Text>
-        <View style={styles.statsColumn}>
-          <Text style={styles.statsNumber}>{followersCount}</Text>
-          <Text style={styles.statsLabel}>Seguidores</Text>
-        </View>
+        {isOwnProfile ? (
+          <TouchableOpacity
+            onPress={() => navigation.navigate('FollowList', { userId, type: 'followers', title: 'Seguidores' })}
+          >
+            <View style={styles.statsColumn}>
+              <Text style={styles.statsNumber}>{followersCount}</Text>
+              <Text style={styles.statsLabel}>Seguidores</Text>
+            </View>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.statsColumn}>
+            <Text style={styles.statsNumber}>{followersCount}</Text>
+            <Text style={styles.statsLabel}>Seguidores</Text>
+          </View>
+        )}
         <Text style={styles.separator}>|</Text>
         <View style={styles.statsColumn}>
           <Text style={styles.statsNumber}>{videos.length}</Text>

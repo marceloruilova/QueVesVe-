@@ -578,6 +578,27 @@ export async function markConversationRead(
   }
 }
 
+export async function getFollowList(
+  userId: number,
+  type: 'followers' | 'following',
+  accessToken: string,
+): Promise<UserSearchItem[]> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/users/${userId}/follow-list/?type=${type}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  if (!res.ok) throw new Error('Error al cargar la lista.');
+  try {
+    return await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
+}
+
 export async function resendVerificationEmail(accessToken: string): Promise<{ detail: string }> {
   let res: Response;
   try {

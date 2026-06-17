@@ -18,6 +18,7 @@ import ConversationScreen from '../pages/Inbox/ConversationScreen';
 import Me from '../pages/Me';
 import Record from '../pages/Record';
 import UploadVideo from '../pages/Record/UploadVideo';
+import FollowList from '../pages/FollowList';
 import UserProfile from '../pages/UserProfile';
 
 const Tab = createMaterialBottomTabNavigator();
@@ -146,6 +147,11 @@ const RootStackScreen: React.FC = () => {
       <Stack.Screen
         name="Conversation"
         component={ConversationScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="FollowList"
+        component={FollowList}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

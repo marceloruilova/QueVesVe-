@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react';
+import { Alert } from 'react-native';
 import * as Google from 'expo-auth-session/providers/google';
 import * as Facebook from 'expo-auth-session/providers/facebook';
 import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
 import { useAuth } from '../contexts/AuthContext';
+
+// Disabled until production OAuth credentials are configured
+const SOCIAL_AUTH_ENABLED = false;
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -14,15 +18,24 @@ export function useSocialAuth() {
 
   const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, string>;
 
-  const [, googleResponse, promptGoogleAsync] = Google.useAuthRequest({
+  const googleConfig = SOCIAL_AUTH_ENABLED ? {
     clientId: extra.googleWebClientId || undefined,
     androidClientId: extra.googleAndroidClientId || undefined,
     iosClientId: extra.googleIosClientId || undefined,
-  });
+  } : {
+    clientId: 'disabled',
+    androidClientId: 'disabled',
+    iosClientId: 'disabled',
+  };
 
-  const [, fbResponse, promptFbAsync] = Facebook.useAuthRequest({
+  const fbConfig = SOCIAL_AUTH_ENABLED ? {
     clientId: extra.facebookAppId || '',
-  });
+  } : {
+    clientId: 'disabled',
+  };
+
+  const [, googleResponse, promptGoogleAsync] = Google.useAuthRequest(googleConfig);
+  const [, fbResponse, promptFbAsync] = Facebook.useAuthRequest(fbConfig);
 
   useEffect(() => {
     if (!googleResponse) return;
@@ -57,11 +70,19 @@ export function useSocialAuth() {
   }, [fbResponse]);
 
   const handleGoogle = () => {
+    if (!SOCIAL_AUTH_ENABLED) {
+      Alert.alert('Próximamente', 'El inicio de sesión con Google estará disponible cuando la app esté en producción.');
+      return;
+    }
     setSocialError('');
     promptGoogleAsync();
   };
 
   const handleFacebook = () => {
+    if (!SOCIAL_AUTH_ENABLED) {
+      Alert.alert('Próximamente', 'El inicio de sesión con Facebook estará disponible cuando la app esté en producción.');
+      return;
+    }
     setSocialError('');
     promptFbAsync();
   };

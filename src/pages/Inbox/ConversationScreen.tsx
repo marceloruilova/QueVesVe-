@@ -92,7 +92,21 @@ const ConversationScreen: React.FC = () => {
     return (
       <MessageBubble isMine={isMine}>
         <MessageText isMine={isMine}>{item.text}</MessageText>
-        <MessageTime isMine={isMine}>{formatTime(item.created_at)}</MessageTime>
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 4, marginTop: 2 }}>
+          <MessageTime isMine={isMine}>{formatTime(item.created_at)}</MessageTime>
+          {isMine && (
+            <Feather
+              name={item.is_read ? 'check-circle' : 'check'}
+              size={11}
+              color="rgba(255,255,255,0.65)"
+            />
+          )}
+        </View>
+        {isMine && item.is_read && (
+          <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', textAlign: 'right' }}>
+            Visto
+          </Text>
+        )}
       </MessageBubble>
     );
   };
