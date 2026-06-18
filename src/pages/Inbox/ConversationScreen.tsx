@@ -134,6 +134,8 @@ const ConversationScreen: React.FC = () => {
           keyExtractor={item => String(item.id)}
           renderItem={renderMessage}
           contentContainerStyle={{ paddingVertical: 8, paddingBottom: 4 }}
+          style={{ flex: 1 }}
+          keyboardShouldPersistTaps="handled"
         />
 
         {blockedReason ? (
@@ -158,9 +160,12 @@ const ConversationScreen: React.FC = () => {
               value={inputText}
               onChangeText={setInputText}
               placeholder="Escribí un mensaje..."
+              placeholderTextColor="#aaa"
               multiline
+              blurOnSubmit={false}
               returnKeyType="send"
               onSubmitEditing={handleSend}
+              textAlignVertical="center"
             />
             <SendButton disabled={!inputText.trim() || sending} onPress={handleSend}>
               <Feather name="send" size={18} color="#fff" />
