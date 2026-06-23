@@ -625,6 +625,52 @@ export async function resendVerificationEmail(accessToken: string): Promise<{ de
   return data as { detail: string };
 }
 
+export async function reportVideo(
+  videoId: number,
+  reason: string,
+  details: string,
+  accessToken: string,
+): Promise<{ message: string }> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/videos/${videoId}/report/`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ reason, details }),
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  let data: { message?: string; error?: string; [key: string]: unknown };
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
+  if (!res.ok) throw new Error(data?.error ?? 'Error al enviar el reporte.');
+  return data as { message: string };
+}
+
+export async function deleteAccount(userId: number, accessToken: string): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/users/${userId}/`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  if (!res.ok) {
+    let data: { error?: string } = {};
+    try { data = await res.json(); } catch { /* ignore */ }
+    throw new Error(data?.error ?? 'Error al eliminar la cuenta.');
+  }
+}
+
 // ─── JWT ────────────────────────────────────────────────────────────────────
 
 export function decodeJWT(token: string): { user_id: number; [key: string]: unknown } {

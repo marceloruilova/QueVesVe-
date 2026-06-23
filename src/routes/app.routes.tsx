@@ -20,6 +20,8 @@ import Record from '../pages/Record';
 import UploadVideo from '../pages/Record/UploadVideo';
 import FollowList from '../pages/FollowList';
 import UserProfile from '../pages/UserProfile';
+import Legal from '../pages/Legal';
+import DeleteAccount from '../pages/DeleteAccount';
 
 const Tab = createMaterialBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -152,6 +154,16 @@ const RootStackScreen: React.FC = () => {
       <Stack.Screen
         name="FollowList"
         component={FollowList}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Legal"
+        component={Legal}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="DeleteAccount"
+        component={DeleteAccount}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

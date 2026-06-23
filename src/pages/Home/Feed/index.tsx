@@ -12,6 +12,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { toggleLike, recordView } from '../../../services/api';
 import { RootStackParamList } from '../../../types/navigation';
 import CommentsModal from './CommentsModal';
+import ReportModal from '../../../components/ReportModal';
 import musicFly from '../../../assets/lottie-animations/music-fly.json';
 
 import {
@@ -50,6 +51,7 @@ const Feed: React.FC<Props> = ({ play, item }) => {
   const [liked, setLiked] = useState(item.liked_by_user);
   const [likesCount, setLikesCount] = useState(item.likes);
   const [showComments, setShowComments] = useState(false);
+  const [showReport, setShowReport] = useState(false);
 
   const spinValue = useRef(new Animated.Value(0)).current;
 
@@ -165,6 +167,15 @@ const Feed: React.FC<Props> = ({ play, item }) => {
           />
           <TextAction>Share</TextAction>
         </BoxAction>
+        <BoxAction onPress={() => setShowReport(true)}>
+          <FontAwesome
+            style={{ alignSelf: 'center' }}
+            name="flag"
+            size={28}
+            color="#fff"
+          />
+          <TextAction>Reportar</TextAction>
+        </BoxAction>
         <BoxAction>
           <Animated.View
             style={{
@@ -215,6 +226,11 @@ const Feed: React.FC<Props> = ({ play, item }) => {
         videoId={item.id}
         visible={showComments}
         onClose={() => setShowComments(false)}
+      />
+      <ReportModal
+        videoId={item.id}
+        visible={showReport}
+        onClose={() => setShowReport(false)}
       />
     </>
   );

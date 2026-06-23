@@ -175,6 +175,36 @@ const Register: React.FC = () => {
         </SocialButton>
       </SocialButtonsRow>
 
+      <View style={{ paddingHorizontal: 24, marginTop: 4, marginBottom: 8 }}>
+        <Text style={{ fontSize: 11, color: '#888', textAlign: 'center', lineHeight: 16 }}>
+          {'Al registrarte aceptás nuestros '}
+          <Text
+            style={{ fontSize: 11, color: '#F5A623', fontWeight: '600' }}
+            onPress={() =>
+              Alert.alert(
+                'Términos y Condiciones',
+                'Al usar QueVesVe!& te comprometés a:\n\n• No subir contenido ilegal o que infrinja derechos de autor.\n• No acosar a otros usuarios.\n• No publicar contenido sexual explícito.\n• Respetar las Normas de la Comunidad.\n\nPodés leer los términos completos y la Política de Privacidad en tu perfil → Ajustes y legal.',
+              )
+            }
+          >
+            Términos y Condiciones
+          </Text>
+          {' y '}
+          <Text
+            style={{ fontSize: 11, color: '#F5A623', fontWeight: '600' }}
+            onPress={() =>
+              Alert.alert(
+                'Política de Privacidad',
+                'Recopilamos tu email, nombre de usuario y los videos que subís para operar la plataforma.\n\nNo vendemos tus datos.\n\nPodés eliminar tu cuenta y todos tus datos desde tu perfil → Eliminar cuenta.\n\nContacto: privacidad@quevesve.app',
+              )
+            }
+          >
+            Política de Privacidad
+          </Text>
+          {'.'}
+        </Text>
+      </View>
+
       <Footer>
         <FooterText>¿Ya tenés una cuenta? </FooterText>
         <FooterLink onPress={() => navigation.navigate('Login')}>

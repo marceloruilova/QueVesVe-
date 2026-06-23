@@ -7,9 +7,10 @@ import {
   View,
   Text,
   Dimensions,
+  StyleSheet,
 } from 'react-native';
 
-import { MaterialIcons, AntDesign, FontAwesome, Feather } from '@expo/vector-icons';
+import { MaterialIcons, AntDesign, FontAwesome, Feather, Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
@@ -123,6 +124,42 @@ const Me: React.FC = () => {
         <Bookmark name="bookmark" size={24} color="black" />
       </ProfileColumn>
       <StatsText>{user?.bio || 'Tocá para agregar una bio'}</StatsText>
+
+      <View style={meStyles.settingsSection}>
+        <Text style={meStyles.sectionTitle}>Ajustes y legal</Text>
+        <TouchableOpacity
+          style={meStyles.settingsRow}
+          onPress={() => navigation.navigate('Legal', { tab: 'terms' })}
+        >
+          <Ionicons name="document-text-outline" size={20} color="#555" />
+          <Text style={meStyles.settingsText}>Términos y Condiciones</Text>
+          <Ionicons name="chevron-forward" size={16} color="#aaa" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={meStyles.settingsRow}
+          onPress={() => navigation.navigate('Legal', { tab: 'privacy' })}
+        >
+          <Ionicons name="shield-checkmark-outline" size={20} color="#555" />
+          <Text style={meStyles.settingsText}>Política de Privacidad</Text>
+          <Ionicons name="chevron-forward" size={16} color="#aaa" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={meStyles.settingsRow}
+          onPress={() => navigation.navigate('Legal', { tab: 'community' })}
+        >
+          <Ionicons name="people-outline" size={20} color="#555" />
+          <Text style={meStyles.settingsText}>Normas de la Comunidad</Text>
+          <Ionicons name="chevron-forward" size={16} color="#aaa" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[meStyles.settingsRow, meStyles.deleteRow]}
+          onPress={() => navigation.navigate('DeleteAccount')}
+        >
+          <Ionicons name="trash-outline" size={20} color="#E5363A" />
+          <Text style={[meStyles.settingsText, meStyles.deleteText]}>Eliminar cuenta</Text>
+          <Ionicons name="chevron-forward" size={16} color="#E5363A" />
+        </TouchableOpacity>
+      </View>
     </Content>
   );
 
@@ -185,5 +222,43 @@ const Me: React.FC = () => {
     </Container>
   );
 };
+
+const meStyles = StyleSheet.create({
+  settingsSection: {
+    width: '100%',
+    marginTop: 28,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    paddingTop: 12,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#aaa',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 4,
+    paddingHorizontal: 4,
+  },
+  settingsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 13,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f5f5f5',
+    gap: 12,
+  },
+  settingsText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#333',
+  },
+  deleteRow: {
+    borderBottomWidth: 0,
+  },
+  deleteText: {
+    color: '#E5363A',
+  },
+});
 
 export default Me;
