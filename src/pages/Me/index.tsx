@@ -14,6 +14,7 @@ import { MaterialIcons, AntDesign, FontAwesome, Feather, Ionicons } from '@expo/
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
+import Constants from 'expo-constants';
 import avatar from '../../assets/avatar.png';
 import { useAuth } from '../../contexts/AuthContext';
 import { getUserVideos, resendVerificationEmail, FeedItem } from '../../services/api';
@@ -160,6 +161,9 @@ const Me: React.FC = () => {
           <Ionicons name="chevron-forward" size={16} color="#E5363A" />
         </TouchableOpacity>
       </View>
+      <Text style={meStyles.versionText}>
+        QueVesVe!& v{Constants.expoConfig?.version ?? '1.0.0'}
+      </Text>
     </Content>
   );
 
@@ -258,6 +262,13 @@ const meStyles = StyleSheet.create({
   },
   deleteText: {
     color: '#E5363A',
+  },
+  versionText: {
+    textAlign: 'center',
+    color: '#bbb',
+    fontSize: 12,
+    marginTop: 24,
+    marginBottom: 8,
   },
 });
 

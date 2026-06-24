@@ -22,6 +22,14 @@
     "ios": {
       "supportsTablet": true
     },
+    "android": {
+      "package": "com.quevesve.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/leaf.png",
+        "backgroundColor": "#F5A623"
+      },
+      "permissions": []
+    },
     "plugins": [
       "expo-web-browser"
     ],
