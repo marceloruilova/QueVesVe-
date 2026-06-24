@@ -38,7 +38,7 @@ const Login: React.FC = () => {
 
   const handleLogin = async () => {
     if (!username || !password) {
-      setError('Please fill in all fields');
+      setError('Completá todos los campos');
       return;
     }
     setLoading(true);
@@ -46,7 +46,7 @@ const Login: React.FC = () => {
     try {
       await login(username, password);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Login failed');
+      setError(e instanceof Error ? e.message : 'No se pudo iniciar sesión');
     } finally {
       setLoading(false);
     }
@@ -57,20 +57,20 @@ const Login: React.FC = () => {
   return (
     <Container>
       <Logo>QueVesVe!&</Logo>
-      <Subtitle>Sign in to your account</Subtitle>
+      <Subtitle>Iniciá sesión en tu cuenta</Subtitle>
 
       {error ? <ErrorText>{error}</ErrorText> : null}
       {socialError ? <ErrorText>{socialError}</ErrorText> : null}
 
       <Input
-        placeholder="Username"
+        placeholder="Usuario o email"
         autoCapitalize="none"
         value={username}
         onChangeText={setUsername}
         editable={!isbusy}
       />
       <Input
-        placeholder="Password"
+        placeholder="Contraseña"
         secureTextEntry
         value={password}
         onChangeText={setPassword}
@@ -81,7 +81,7 @@ const Login: React.FC = () => {
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <ButtonText>Log In</ButtonText>
+          <ButtonText>Ingresar</ButtonText>
         )}
       </Button>
 
@@ -125,9 +125,9 @@ const Login: React.FC = () => {
       </SocialButtonsRow>
 
       <Footer>
-        <FooterText>Don't have an account? </FooterText>
+        <FooterText>¿No tenés cuenta? </FooterText>
         <FooterLink onPress={() => navigation.navigate('Register')}>
-          Sign up
+          Registrate
         </FooterLink>
       </Footer>
     </Container>

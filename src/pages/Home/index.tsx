@@ -49,11 +49,11 @@ const Home: React.FC = () => {
     <Container>
       <Header {...panResponder.panHandlers}>
         <Tab onPress={() => { setTab(1); setActive(0); }}>
-          <Text active={tab === 1}>Following</Text>
+          <Text active={tab === 1}>Siguiendo</Text>
         </Tab>
         <Separator>|</Separator>
         <Tab onPress={() => { setTab(2); setActive(0); }}>
-          <Text active={tab === 2}>For You</Text>
+          <Text active={tab === 2}>Para vos</Text>
         </Tab>
       </Header>
 

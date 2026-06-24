@@ -17,7 +17,7 @@ import { reportVideo } from '../../services/api';
 const REASONS = [
   { key: 'spam', label: 'Spam o contenido falso' },
   { key: 'inappropriate', label: 'Contenido inapropiado' },
-  { key: 'harassment', label: 'Acoso o bullying' },
+  { key: 'harassment', label: 'Acoso o ciberacoso' },
   { key: 'copyright', label: 'Violación de derechos de autor' },
   { key: 'misinformation', label: 'Desinformación' },
   { key: 'other', label: 'Otro' },

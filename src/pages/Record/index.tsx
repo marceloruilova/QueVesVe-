@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Text, View, StatusBar, Alert } from 'react-native';
+import { Text, View, StatusBar, Alert, TouchableOpacity, Linking } from 'react-native';
 
 import {
   FontAwesome,
@@ -70,10 +70,28 @@ const Record: React.FC = () => {
   };
 
   if (!cameraPermission || !micPermission) return <View />;
-  if (!cameraPermission.granted) {
+  if (!cameraPermission.granted || !micPermission.granted) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' }}>
-        <Text style={{ color: '#fff' }}>Se necesita permiso de cámara</Text>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000', padding: 32 }}>
+        <MaterialCommunityIcons name="camera-off" size={64} color="#F5A623" />
+        <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700', marginTop: 20, textAlign: 'center' }}>
+          Permisos requeridos
+        </Text>
+        <Text style={{ color: '#aaa', fontSize: 14, marginTop: 12, textAlign: 'center', lineHeight: 22 }}>
+          QueVesVe necesita acceso a tu cámara y micrófono para grabar videos. Habilitá los permisos en Configuración.
+        </Text>
+        <TouchableOpacity
+          onPress={() => Linking.openSettings()}
+          style={{
+            marginTop: 28,
+            backgroundColor: '#F5A623',
+            paddingHorizontal: 28,
+            paddingVertical: 14,
+            borderRadius: 8,
+          }}
+        >
+          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Abrir Configuración</Text>
+        </TouchableOpacity>
       </View>
     );
   }

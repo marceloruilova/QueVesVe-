@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Image, Animated, Easing, TouchableOpacity } from 'react-native';
+import { Image, Animated, Easing, TouchableOpacity, Share } from 'react-native';
 
 import { FontAwesome, AntDesign } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -78,6 +78,10 @@ const Feed: React.FC<Props> = ({ play, item }) => {
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg'],
   });
+
+  const handleShare = async () => {
+    await Share.share({ message: `Mirá este video en QueVesVe!& https://quevesve.app` });
+  };
 
   const handleLike = async () => {
     if (!accessToken) return;
@@ -158,14 +162,14 @@ const Feed: React.FC<Props> = ({ play, item }) => {
           />
           <TextAction>{item.comments}</TextAction>
         </BoxAction>
-        <BoxAction>
+        <BoxAction onPress={handleShare}>
           <FontAwesome
             style={{ alignSelf: 'center' }}
             name="whatsapp"
             size={35}
             color="#06d755"
           />
-          <TextAction>Share</TextAction>
+          <TextAction>Compartir</TextAction>
         </BoxAction>
         <BoxAction onPress={() => setShowReport(true)}>
           <FontAwesome

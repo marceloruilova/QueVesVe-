@@ -54,7 +54,7 @@ const ConversationScreen: React.FC = () => {
     fetchMessages();
     if (accessToken) markConversationRead(conversationId, accessToken);
 
-    pollingRef.current = setInterval(fetchMessages, 3000);
+    pollingRef.current = setInterval(fetchMessages, 5000);
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
