@@ -152,6 +152,9 @@ export interface FeedItem {
   uri: string | null;
   thumbnail_url: string | null;
   views_count: number | null;
+  category: string;
+  source_type: 'ugc' | 'pexels' | 'pixabay';
+  author_name: string;
 }
 
 export interface UserSearchItem {
@@ -169,10 +172,13 @@ export interface CommentItem {
   created_at: string;
 }
 
-export async function getFeed(accessToken: string): Promise<FeedItem[]> {
+export async function getFeed(accessToken: string, category?: string): Promise<FeedItem[]> {
   let res: Response;
+  const url = category
+    ? `${API_BASE_URL}/videos/?category=${encodeURIComponent(category)}`
+    : `${API_BASE_URL}/videos/`;
   try {
-    res = await fetch(`${API_BASE_URL}/videos/`, {
+    res = await fetch(url, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',

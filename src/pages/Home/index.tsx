@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { View, PanResponder, Text as RNText } from 'react-native';
+import { View, PanResponder, Text as RNText, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 
 import PagerView from 'react-native-pager-view';
 import { useFocusEffect } from '@react-navigation/native';
@@ -10,21 +10,41 @@ import Feed from './Feed';
 
 import { Container, Header, Text, Tab, Separator } from './styles';
 
+const CATEGORY_PILLS: { key: string | null; label: string }[] = [
+  { key: null, label: 'Todo' },
+  { key: 'naturaleza', label: 'Naturaleza' },
+  { key: 'animales', label: 'Animales' },
+  { key: 'comida', label: 'Comida' },
+  { key: 'autos', label: 'Autos' },
+  { key: 'viajes', label: 'Viajes' },
+  { key: 'tecnologia', label: 'Tecnología' },
+  { key: 'deporte', label: 'Deporte' },
+  { key: 'musica', label: 'Música' },
+  { key: 'humor', label: 'Humor' },
+  { key: 'educacion', label: 'Educación' },
+];
+
 const Home: React.FC = () => {
   const { accessToken } = useAuth();
   // tab: 1 = Following, 2 = For You
   const [tab, setTab] = useState(2);
   const [active, setActive] = useState(0);
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       if (!accessToken) return;
-      getFeed(accessToken)
+      getFeed(accessToken, selectedCategory ?? undefined)
         .then(setFeedItems)
         .catch(() => setFeedItems([]));
-    }, [accessToken]),
+    }, [accessToken, selectedCategory]),
   );
+
+  const handleCategorySelect = (key: string | null) => {
+    setSelectedCategory(key);
+    setActive(0);
+  };
 
   // Swipe horizontal sobre el header para cambiar tab
   // setTab y setActive son estables (useState), seguros de capturar en useRef
@@ -57,6 +77,25 @@ const Home: React.FC = () => {
         </Tab>
       </Header>
 
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={pillStyles.row}
+        contentContainerStyle={pillStyles.rowContent}
+      >
+        {CATEGORY_PILLS.map(pill => (
+          <TouchableOpacity
+            key={String(pill.key)}
+            style={[pillStyles.pill, selectedCategory === pill.key && pillStyles.pillActive]}
+            onPress={() => handleCategorySelect(pill.key)}
+          >
+            <RNText style={[pillStyles.pillText, selectedCategory === pill.key && pillStyles.pillTextActive]}>
+              {pill.label}
+            </RNText>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
       {isEmpty ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <RNText style={{ color: '#fff', fontSize: 16, opacity: 0.6 }}>
@@ -82,5 +121,38 @@ const Home: React.FC = () => {
     </Container>
   );
 };
+
+const pillStyles = StyleSheet.create({
+  row: {
+    maxHeight: 40,
+    flexGrow: 0,
+  },
+  rowContent: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    gap: 8,
+  },
+  pill: {
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: 20,
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  pillActive: {
+    backgroundColor: '#F5A623',
+    borderColor: '#F5A623',
+  },
+  pillText: {
+    color: '#aaa',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  pillTextActive: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+});
 
 export default Home;
