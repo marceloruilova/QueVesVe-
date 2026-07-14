@@ -86,6 +86,21 @@ export async function loginUser(
   return data as LoginResponse;
 }
 
+export async function refreshAccessToken(refreshToken: string): Promise<{ access: string }> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/api/token/refresh/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh: refreshToken }),
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  if (!res.ok) throw new Error('No se pudo renovar la sesión.');
+  return res.json();
+}
+
 export async function registerUser(
   username: string,
   email: string,
