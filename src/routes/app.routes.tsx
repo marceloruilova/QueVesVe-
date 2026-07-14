@@ -70,7 +70,7 @@ const AppRoutes: React.FC = () => {
         name="Discover"
         component={Discover}
         options={{
-          tabBarLabel: 'Muchachos',
+          tabBarLabel: 'Panas',
           tabBarIcon: ({ color }) => (
             <AntDesign name="search1" size={24} color={color} />
           ),

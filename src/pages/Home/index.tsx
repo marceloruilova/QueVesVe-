@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import { View, PanResponder, Text as RNText, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 
 import PagerView from 'react-native-pager-view';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 
 import { getFeed, FeedItem } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -26,6 +26,7 @@ const CATEGORY_PILLS: { key: string | null; label: string }[] = [
 
 const Home: React.FC = () => {
   const { accessToken } = useAuth();
+  const isFocused = useIsFocused();
   // tab: 1 = Following, 2 = For You
   const [tab, setTab] = useState(2);
   const [active, setActive] = useState(0);
@@ -113,7 +114,7 @@ const Home: React.FC = () => {
         >
           {activeFeed.map((item, index) => (
             <View key={item.id}>
-              <Feed item={item} play={index === active} />
+              <Feed item={item} play={isFocused && index === active} />
             </View>
           ))}
         </PagerView>

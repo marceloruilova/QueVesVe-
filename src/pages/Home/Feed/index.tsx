@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Image, Animated, Easing, TouchableOpacity, Share } from 'react-native';
+import { Image, Animated, Easing, TouchableOpacity, Pressable, Share } from 'react-native';
 
 import { FontAwesome, AntDesign } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -52,6 +52,7 @@ const Feed: React.FC<Props> = ({ play, item }) => {
   const [likesCount, setLikesCount] = useState(item.likes);
   const [showComments, setShowComments] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [paused, setPaused] = useState(false);
 
   const spinValue = useRef(new Animated.Value(0)).current;
 
@@ -60,6 +61,17 @@ const Feed: React.FC<Props> = ({ play, item }) => {
       recordView(item.id, accessToken);
     }
   }, [play]);
+
+  // Al dejar de ser el video activo (scroll, cambio de tab, etc.) se resetea
+  // el pausado manual para que la próxima vez que sea activo arranque reproduciendo.
+  useEffect(() => {
+    if (!play) {
+      setPaused(false);
+    }
+  }, [play]);
+
+  const isPlaying = play && !paused;
+  const handleTogglePause = () => setPaused(prev => !prev);
 
   useEffect(() => {
     const anim = Animated.loop(
@@ -112,19 +124,26 @@ const Feed: React.FC<Props> = ({ play, item }) => {
       />
       <Container>
         {item.uri ? (
-          <Video
-            source={{ uri: item.uri }}
-            rate={1.0}
-            volume={1.0}
-            isMuted={false}
-            resizeMode={ResizeMode.COVER}
-            shouldPlay={play}
-            isLooping
-            style={{
-              width: '100%',
-              height: '100%',
-            }}
-          />
+          <Pressable
+            onPress={handleTogglePause}
+            style={{ width: '100%', height: '100%' }}
+            testID="feed-video-pressable"
+          >
+            <Video
+              source={{ uri: item.uri }}
+              rate={1.0}
+              volume={1.0}
+              isMuted={false}
+              resizeMode={ResizeMode.COVER}
+              shouldPlay={isPlaying}
+              isLooping
+              style={{
+                width: '100%',
+                height: '100%',
+              }}
+              testID="feed-video"
+            />
+          </Pressable>
         ) : null}
       </Container>
       <Details>
@@ -188,7 +207,7 @@ const Feed: React.FC<Props> = ({ play, item }) => {
               borderColor: '#292929',
               transform: [
                 {
-                  rotate: play ? rotateProp : '0deg',
+                  rotate: isPlaying ? rotateProp : '0deg',
                 },
               ],
             }}
@@ -209,7 +228,7 @@ const Feed: React.FC<Props> = ({ play, item }) => {
 
           <LottieView
             source={musicFly}
-            autoPlay={play}
+            autoPlay={isPlaying}
             loop
             style={{ width: 150, position: 'absolute', bottom: 0, right: 0 }}
           />

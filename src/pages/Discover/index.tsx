@@ -44,7 +44,14 @@ import {
   PlaceholderText,
 } from './styles';
 
-const TABS = ['Muchachos', 'Videos', 'Live', 'Top'];
+const TABS = ['Panas', 'Videos', 'Live', 'Top'];
+const SEARCHABLE_TABS = [0, 1];
+const SEARCH_PLACEHOLDERS = [
+  'Buscá a tus panas...',
+  'Buscá videos...',
+  'Los vivos estarán disponibles pronto',
+  'Mostrando los más vistos',
+];
 
 const Discover: React.FC = () => {
   const { accessToken } = useAuth();
@@ -57,6 +64,7 @@ const Discover: React.FC = () => {
   const [topVideos, setTopVideos] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestIdRef = useRef(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -84,19 +92,28 @@ const Discover: React.FC = () => {
 
   const runSearch = async (q: string, tab: number) => {
     if (!accessToken || !q || q.length < 2) return;
+    if (!SEARCHABLE_TABS.includes(tab)) return;
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     try {
       if (tab === 0) {
         const res = await searchUsers(q, accessToken);
-        setUsers(res);
+        if (requestIdRef.current === requestId) setUsers(res);
       } else if (tab === 1) {
         const res = await searchVideos(q, accessToken);
-        setVideos(res);
+        if (requestIdRef.current === requestId) setVideos(res);
       }
     } catch {
       // silently ignore search errors
     } finally {
-      setLoading(false);
+      if (requestIdRef.current === requestId) setLoading(false);
+    }
+  };
+
+  const handleTabChange = (index: number) => {
+    setActiveTab(index);
+    if (!SEARCHABLE_TABS.includes(index)) {
+      setQuery('');
     }
   };
 
@@ -170,7 +187,7 @@ const Discover: React.FC = () => {
     </VideoCard>
   );
 
-  const showEmptyState = !query && activeTab !== 3;
+  const showEmptyState = !query && SEARCHABLE_TABS.includes(activeTab);
   const activeVideos = activeTab === 3 ? topVideos : videos;
 
   return (
@@ -184,7 +201,8 @@ const Discover: React.FC = () => {
             color="#838383"
           />
           <Input
-            placeholder="Buscá a tus muchachos..."
+            placeholder={SEARCH_PLACEHOLDERS[activeTab]}
+            editable={SEARCHABLE_TABS.includes(activeTab)}
             value={query}
             returnKeyType="search"
             onChangeText={text => setQuery(text)}
@@ -207,7 +225,7 @@ const Discover: React.FC = () => {
           <TabItem
             key={label}
             active={activeTab === index}
-            onPress={() => setActiveTab(index)}
+            onPress={() => handleTabChange(index)}
           >
             <TabText active={activeTab === index}>{label}</TabText>
           </TabItem>
@@ -221,7 +239,7 @@ const Discover: React.FC = () => {
       {!loading && showEmptyState && (
         <EmptyState>
           <AntDesign name="search1" size={64} color="#d0d0d0" />
-          <EmptyText>Buscá a tus muchachos...</EmptyText>
+          <EmptyText>{SEARCH_PLACEHOLDERS[activeTab]}</EmptyText>
         </EmptyState>
       )}
 
