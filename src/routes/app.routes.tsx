@@ -21,6 +21,7 @@ import Record from '../pages/Record';
 import UploadVideo from '../pages/Record/UploadVideo';
 import FollowList from '../pages/FollowList';
 import UserProfile from '../pages/UserProfile';
+import VideoViewer from '../pages/VideoViewer';
 import Legal from '../pages/Legal';
 import DeleteAccount from '../pages/DeleteAccount';
 
@@ -140,6 +141,11 @@ const RootStackScreen: React.FC = () => {
       <Stack.Screen
         name="UserProfile"
         component={UserProfile}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="VideoViewer"
+        component={VideoViewer}
         options={{ headerShown: false }}
       />
       <Stack.Screen

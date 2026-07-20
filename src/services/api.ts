@@ -255,6 +255,32 @@ export async function uploadVideo(
   if (!res.ok) throw new Error('Failed to upload video');
 }
 
+export async function updateVideo(
+  videoId: number,
+  data: { description?: string; tags?: string; music?: string },
+  accessToken: string,
+): Promise<FeedItem> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/videos/${videoId}/`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  if (!res.ok) throw new Error('Error al actualizar el video');
+  try {
+    return await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
+}
+
 export async function toggleLike(
   videoId: number,
   liked: boolean,

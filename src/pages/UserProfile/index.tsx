@@ -250,8 +250,13 @@ const UserProfile: React.FC = () => {
         ListHeaderComponent={ProfileHeader}
         columnWrapperStyle={{ gap: 1 }}
         ItemSeparatorComponent={() => <View style={{ height: 1 }} />}
-        renderItem={({ item }) => (
-          <View style={styles.videoCell}>
+        renderItem={({ item, index }) => (
+          <TouchableOpacity
+            style={styles.videoCell}
+            activeOpacity={0.8}
+            testID="user-video-cell"
+            onPress={() => navigation.navigate('VideoViewer', { userId, startIndex: index })}
+          >
             {item.thumbnail_url ? (
               <Image
                 source={{ uri: item.thumbnail_url }}
@@ -261,7 +266,7 @@ const UserProfile: React.FC = () => {
             ) : (
               <FontAwesome name="play" size={24} color="rgba(255,255,255,0.5)" />
             )}
-          </View>
+          </TouchableOpacity>
         )}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>

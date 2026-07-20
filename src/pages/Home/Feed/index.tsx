@@ -12,6 +12,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { toggleLike, recordView } from '../../../services/api';
 import { RootStackParamList } from '../../../types/navigation';
 import CommentsModal from './CommentsModal';
+import EditVideoModal from './EditVideoModal';
 import ReportModal from '../../../components/ReportModal';
 import musicFly from '../../../assets/lottie-animations/music-fly.json';
 
@@ -32,6 +33,7 @@ interface Item {
   user_id: number;
   username: string;
   profile_picture: string | null;
+  description?: string;
   tags: string;
   music: string;
   likes: number;
@@ -46,13 +48,19 @@ interface Props {
 }
 
 const Feed: React.FC<Props> = ({ play, item }) => {
-  const { accessToken } = useAuth();
+  const { accessToken, user } = useAuth();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [liked, setLiked] = useState(item.liked_by_user);
   const [likesCount, setLikesCount] = useState(item.likes);
   const [showComments, setShowComments] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [description, setDescription] = useState(item.description ?? '');
+  const [tags, setTags] = useState(item.tags);
+  const [music, setMusic] = useState(item.music);
+
+  const isOwner = !!user && user.id === item.user_id;
 
   const spinValue = useRef(new Animated.Value(0)).current;
 
@@ -158,10 +166,10 @@ const Feed: React.FC<Props> = ({ play, item }) => {
         >
           <User>{item.username}</User>
         </TouchableOpacity>
-        <Tags>{item.tags}</Tags>
+        <Tags>{tags}</Tags>
         <MusicBox>
           <FontAwesome name="music" size={15} color="#f5f5f5" />
-          <Music>{item.music}</Music>
+          <Music>{music}</Music>
         </MusicBox>
       </Details>
       <Actions>
@@ -197,6 +205,16 @@ const Feed: React.FC<Props> = ({ play, item }) => {
           />
           <TextAction>Reportar</TextAction>
         </BoxAction>
+        {isOwner && (
+          <BoxAction onPress={() => setShowEdit(true)} testID="feed-edit-action">
+            <FontAwesome
+              name="pencil"
+              size={30}
+              color="#fff"
+            />
+            <TextAction>Editar</TextAction>
+          </BoxAction>
+        )}
         <BoxAction>
           <Animated.View
             style={{
@@ -255,6 +273,21 @@ const Feed: React.FC<Props> = ({ play, item }) => {
         visible={showReport}
         onClose={() => setShowReport(false)}
       />
+      {isOwner && (
+        <EditVideoModal
+          videoId={item.id}
+          visible={showEdit}
+          initialDescription={description}
+          initialTags={tags}
+          initialMusic={music}
+          onClose={() => setShowEdit(false)}
+          onSaved={data => {
+            setDescription(data.description);
+            setTags(data.tags);
+            setMusic(data.music);
+          }}
+        />
+      )}
     </>
   );
 };

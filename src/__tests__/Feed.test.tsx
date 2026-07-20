@@ -3,14 +3,17 @@ import { fireEvent, render } from '@testing-library/react-native';
 
 const mockRecordView = jest.fn();
 const mockToggleLike = jest.fn();
+const mockUpdateVideo = jest.fn();
 
 jest.mock('../services/api', () => ({
   recordView: (...args: unknown[]) => mockRecordView(...args),
   toggleLike: (...args: unknown[]) => mockToggleLike(...args),
+  updateVideo: (...args: unknown[]) => mockUpdateVideo(...args),
 }));
 
+const mockUseAuth = jest.fn();
 jest.mock('../contexts/AuthContext', () => ({
-  useAuth: () => ({ accessToken: 'token-123' }),
+  useAuth: () => mockUseAuth(),
 }));
 
 jest.mock('@react-navigation/native', () => ({
@@ -79,6 +82,7 @@ const baseItem = {
 describe('Feed — pausa/reanudación del video', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseAuth.mockReturnValue({ accessToken: 'token-123', user: null });
   });
 
   // Regresión: en el dispositivo real el tap-to-pause no funcionaba pese a que
@@ -134,5 +138,58 @@ describe('Feed — pausa/reanudación del video', () => {
     await rerender(<Feed item={baseItem} play />);
 
     expect(getByTestId('feed-video').props.shouldPlay).toBe(true);
+  });
+});
+
+// Regresión: los videos publicados sin descripción/música no se podían editar
+// luego, así que quedaban incompletos para siempre. Sólo quien subió el video
+// debe ver la acción "Editar" y poder actualizar descripción/tags/música.
+describe('Feed — edición de videos propios', () => {
+  const editableItem = { ...baseItem, description: '' };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('no muestra la acción de editar si el video no es del usuario logueado', async () => {
+    mockUseAuth.mockReturnValue({ accessToken: 'token-123', user: { id: 999 } });
+
+    const { queryByTestId } = await render(<Feed item={editableItem} play={false} />);
+
+    expect(queryByTestId('feed-edit-action')).toBeNull();
+  });
+
+  it('muestra la acción de editar cuando el video es del usuario logueado', async () => {
+    mockUseAuth.mockReturnValue({ accessToken: 'token-123', user: { id: 10 } });
+
+    const { getByTestId } = await render(<Feed item={editableItem} play={false} />);
+
+    expect(getByTestId('feed-edit-action')).toBeTruthy();
+  });
+
+  it('permite agregar descripción y música a un video propio publicado sin ellas', async () => {
+    mockUseAuth.mockReturnValue({ accessToken: 'token-123', user: { id: 10 } });
+    mockUpdateVideo.mockResolvedValue({
+      description: 'Nueva descripción',
+      tags: '#test',
+      music: 'Nueva canción',
+    });
+
+    const { getByTestId, getByText } = await render(<Feed item={editableItem} play={false} />);
+
+    await fireEvent.press(getByTestId('feed-edit-action'));
+    expect(getByTestId('edit-video-description')).toBeTruthy();
+
+    await fireEvent.changeText(getByTestId('edit-video-description'), 'Nueva descripción');
+    await fireEvent.changeText(getByTestId('edit-video-music'), 'Nueva canción');
+    await fireEvent.press(getByTestId('edit-video-save'));
+
+    expect(mockUpdateVideo).toHaveBeenCalledWith(
+      1,
+      { description: 'Nueva descripción', tags: '#test', music: 'Nueva canción' },
+      'token-123',
+    );
+    // El texto de música que se muestra sobre el video debe reflejar el nuevo valor guardado.
+    expect(getByText('Nueva canción')).toBeTruthy();
   });
 });
