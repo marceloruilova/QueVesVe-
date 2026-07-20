@@ -9,9 +9,5 @@ module.exports = {
   extra: {
     ...expo.extra,
     apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:8000',
-    googleWebClientId: process.env.GOOGLE_WEB_CLIENT_ID || '',
-    googleAndroidClientId: process.env.GOOGLE_ANDROID_CLIENT_ID || '',
-    googleIosClientId: process.env.GOOGLE_IOS_CLIENT_ID || '',
-    facebookAppId: process.env.FACEBOOK_APP_ID || '',
   },
 };

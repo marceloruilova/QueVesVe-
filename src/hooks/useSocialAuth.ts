@@ -6,7 +6,9 @@ import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
 import { useAuth } from '../contexts/AuthContext';
 
-const SOCIAL_AUTH_ENABLED = true;
+// Disabled for v1 — falta el Client ID de Google (Facebook ya está listo, se
+// activarán ambos juntos cuando se resuelva Google OAuth)
+const SOCIAL_AUTH_ENABLED = false;
 
 WebBrowser.maybeCompleteAuthSession();
 
