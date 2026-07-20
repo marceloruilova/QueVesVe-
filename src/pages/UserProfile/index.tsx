@@ -221,7 +221,7 @@ const UserProfile: React.FC = () => {
           )}
           {profile.senescyt_verified && (
             <View style={styles.verifiedBadge}>
-              <AntDesign name="checkcircle" size={14} color="#fff" />
+              <AntDesign name="check-circle" size={14} color="#fff" />
               <Text style={styles.verifiedText}>
                 Verificado SENESCYT — {profile.senescyt_verified_name}
               </Text>
@@ -237,7 +237,7 @@ const UserProfile: React.FC = () => {
       {/* Header con botón volver */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <AntDesign name="arrowleft" size={24} color="#000" />
+          <AntDesign name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{profile.username}</Text>
         <View style={{ width: 24 }} />

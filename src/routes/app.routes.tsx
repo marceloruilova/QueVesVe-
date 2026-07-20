@@ -10,6 +10,7 @@ import { createMaterialBottomTabNavigator } from '@react-navigation/material-bot
 import { createStackNavigator } from '@react-navigation/stack';
 
 import HomeButtom from '../components/HomeButton';
+import { theme } from '../theme/theme';
 import Discover from '../pages/Discover';
 import EditProfile from '../pages/EditProfile';
 import Home from '../pages/Home';
@@ -47,10 +48,10 @@ const AppRoutes: React.FC = () => {
     <Tab.Navigator
       shifting={false}
       barStyle={{
-        backgroundColor: home ? '#000' : '#F5A623',
+        backgroundColor: home ? theme.colors.primaryDark : theme.colors.primary,
       }}
       initialRouteName="Home"
-      activeColor={home ? '#fff' : '#1A1A1A'}
+      activeColor={home ? theme.colors.text : theme.colors.textDark}
     >
       <Tab.Screen
         name="Home"
@@ -72,7 +73,7 @@ const AppRoutes: React.FC = () => {
         options={{
           tabBarLabel: 'Panas',
           tabBarIcon: ({ color }) => (
-            <AntDesign name="search1" size={24} color={color} />
+            <AntDesign name="search" size={24} color={color} />
           ),
         }}
       />

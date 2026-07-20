@@ -58,10 +58,12 @@ export const BoxAction = styled.TouchableOpacity.attrs({
   activeOpacity: 0.8,
 })`
   flex-direction: column;
+  align-items: center;
   padding: 10px 0;
 `;
 
 export const TextAction = styled.Text`
   color: #fff;
   padding: 5px 0;
+  text-align: center;
 `;

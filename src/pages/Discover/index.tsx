@@ -65,6 +65,8 @@ const Discover: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const requestIdRef = useRef(0);
+  // styled-components' TextInput typings don't resolve a usable ref type here.
+  const inputRef = useRef<{ focus: () => void }>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -193,14 +195,15 @@ const Discover: React.FC = () => {
   return (
     <Container>
       <Header>
-        <Search>
+        <Search onPress={() => inputRef.current?.focus()}>
           <AntDesign
             style={{ paddingRight: 10 }}
-            name="search1"
+            name="search"
             size={18}
             color="#838383"
           />
           <Input
+            ref={inputRef}
             placeholder={SEARCH_PLACEHOLDERS[activeTab]}
             editable={SEARCHABLE_TABS.includes(activeTab)}
             value={query}
@@ -213,11 +216,12 @@ const Discover: React.FC = () => {
               size={16}
               color="#838383"
               onPress={() => setQuery('')}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               style={{ paddingLeft: 8 }}
             />
           )}
         </Search>
-        <AntDesign name="scan1" size={25} color="black" />
+        <AntDesign name="scan" size={25} color="black" />
       </Header>
 
       <TabBar>
@@ -238,7 +242,7 @@ const Discover: React.FC = () => {
 
       {!loading && showEmptyState && (
         <EmptyState>
-          <AntDesign name="search1" size={64} color="#d0d0d0" />
+          <AntDesign name="search" size={64} color="#d0d0d0" />
           <EmptyText>{SEARCH_PLACEHOLDERS[activeTab]}</EmptyText>
         </EmptyState>
       )}

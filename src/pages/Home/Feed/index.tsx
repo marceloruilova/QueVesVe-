@@ -114,6 +114,8 @@ const Feed: React.FC<Props> = ({ play, item }) => {
     <>
       <LinearGradient
         colors={['rgba(0,0,0,.3)', 'transparent']}
+        pointerEvents="none"
+        testID="feed-gradient-top"
         style={{
           position: 'absolute',
           left: 0,
@@ -165,7 +167,6 @@ const Feed: React.FC<Props> = ({ play, item }) => {
       <Actions>
         <BoxAction onPress={handleLike}>
           <AntDesign
-            style={{ alignSelf: 'center' }}
             name="heart"
             size={35}
             color={liked ? '#E5363A' : '#fff'}
@@ -174,7 +175,6 @@ const Feed: React.FC<Props> = ({ play, item }) => {
         </BoxAction>
         <BoxAction onPress={() => setShowComments(true)}>
           <FontAwesome
-            style={{ alignSelf: 'center' }}
             name="commenting"
             size={35}
             color="#fff"
@@ -183,7 +183,6 @@ const Feed: React.FC<Props> = ({ play, item }) => {
         </BoxAction>
         <BoxAction onPress={handleShare}>
           <FontAwesome
-            style={{ alignSelf: 'center' }}
             name="whatsapp"
             size={35}
             color="#06d755"
@@ -192,7 +191,6 @@ const Feed: React.FC<Props> = ({ play, item }) => {
         </BoxAction>
         <BoxAction onPress={() => setShowReport(true)}>
           <FontAwesome
-            style={{ alignSelf: 'center' }}
             name="flag"
             size={28}
             color="#fff"
@@ -236,6 +234,8 @@ const Feed: React.FC<Props> = ({ play, item }) => {
       </Actions>
       <LinearGradient
         colors={['transparent', 'rgba(0,0,0,.4)']}
+        pointerEvents="none"
+        testID="feed-gradient-bottom"
         style={{
           position: 'absolute',
           left: 0,

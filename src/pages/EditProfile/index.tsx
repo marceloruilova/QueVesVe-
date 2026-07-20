@@ -146,7 +146,7 @@ const EditProfile: React.FC = () => {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <AntDesign name="arrowleft" size={24} color="#000" />
+            <AntDesign name="arrow-left" size={24} color="#000" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Editar perfil</Text>
           <TouchableOpacity onPress={handleSave} disabled={saving} style={styles.saveButton}>
@@ -203,7 +203,7 @@ const EditProfile: React.FC = () => {
           />
           {user?.is_adult ? (
             <View style={styles.adultBadge}>
-              <AntDesign name="checkcircle" size={14} color="#27ae60" />
+              <AntDesign name="check-circle" size={14} color="#27ae60" />
               <Text style={styles.adultBadgeText}>Mayor de edad verificado</Text>
             </View>
           ) : (
@@ -249,7 +249,7 @@ const EditProfile: React.FC = () => {
             <Text style={styles.sectionLabel}>Verificación SENESCYT</Text>
             {verified ? (
               <View style={styles.verifiedBanner}>
-                <AntDesign name="checkcircle" size={18} color="#27ae60" />
+                <AntDesign name="check-circle" size={18} color="#27ae60" />
                 <Text style={styles.verifiedBannerText}>
                   Verificado — {verifiedName}
                 </Text>

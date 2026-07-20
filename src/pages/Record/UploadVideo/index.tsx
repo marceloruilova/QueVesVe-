@@ -49,7 +49,7 @@ const UploadVideo: React.FC = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <AntDesign name="arrowleft" size={24} color="#fff" />
+          <AntDesign name="arrow-left" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Nuevo video</Text>
         <View style={{ width: 44 }} />

@@ -20,11 +20,15 @@ export const Header = styled.View`
   align-items: center;
 `;
 
-export const Search = styled.View`
+export const Search = styled.TouchableOpacity.attrs({
+  activeOpacity: 1,
+})`
   flex: 1;
-  border-radius: 5px;
+  border-radius: 8px;
+  border-width: 1px;
+  border-color: #d8d8d8;
   align-items: center;
-  padding: 10px 15px;
+  padding: 12px 15px;
   margin-right: 15px;
   background: #ececec;
   flex-direction: row;
@@ -33,6 +37,7 @@ export const Search = styled.View`
 export const Input = styled.TextInput`
   flex: 1;
   font-size: 16px;
+  padding: 4px 0;
 `;
 
 export const TabBar = styled.View`

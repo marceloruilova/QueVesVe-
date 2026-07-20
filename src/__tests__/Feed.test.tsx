@@ -32,7 +32,17 @@ jest.mock('expo-av', () => {
 
 jest.mock('expo-linear-gradient', () => {
   const { View } = require('react-native');
-  return { LinearGradient: (props: { children?: React.ReactNode }) => <View>{props.children}</View> };
+  return {
+    LinearGradient: (props: {
+      children?: React.ReactNode;
+      testID?: string;
+      pointerEvents?: string;
+    }) => (
+      <View testID={props.testID} pointerEvents={props.pointerEvents}>
+        {props.children}
+      </View>
+    ),
+  };
 });
 
 jest.mock('lottie-react-native', () => {
@@ -69,6 +79,21 @@ const baseItem = {
 describe('Feed — pausa/reanudación del video', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  // Regresión: en el dispositivo real el tap-to-pause no funcionaba pese a que
+  // este test suite pasaba, porque los overlays de LinearGradient (arriba y
+  // abajo, para oscurecer y dar legibilidad al texto) cubren casi toda la
+  // pantalla con position:absolute y, al no tener z-index/pointerEvents,
+  // quedan por encima del Container del video (que tiene z-index: -1) e
+  // interceptan el toque antes de que llegue al Pressable. fireEvent.press
+  // apunta directo al testID y no reproduce ese problema de stacking/hit-testing,
+  // por eso se verifica explícitamente que los overlays tengan pointerEvents="none".
+  it('los overlays decorativos (gradientes) no bloquean el toque sobre el video', async () => {
+    const { getByTestId } = await render(<Feed item={baseItem} play />);
+
+    expect(getByTestId('feed-gradient-top').props.pointerEvents).toBe('none');
+    expect(getByTestId('feed-gradient-bottom').props.pointerEvents).toBe('none');
   });
 
   it('reproduce el video cuando play=true y lo pausa al tocarlo (tap-to-pause)', async () => {

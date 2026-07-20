@@ -119,7 +119,7 @@ const CommentsModal: React.FC<Props> = ({ videoId, visible, onClose }) => {
               {sending ? (
                 <ActivityIndicator size="small" color="#E5363A" />
               ) : (
-                <AntDesign name="arrowright" size={22} color={text.trim() ? '#E5363A' : '#ccc'} />
+                <AntDesign name="arrow-right" size={22} color={text.trim() ? '#E5363A' : '#ccc'} />
               )}
             </TouchableOpacity>
           </View>
