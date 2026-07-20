@@ -32,12 +32,6 @@
     },
     "plugins": [
       "expo-web-browser"
-    ],
-    "extra": {
-      "googleWebClientId": "",
-      "googleAndroidClientId": "",
-      "googleIosClientId": "",
-      "facebookAppId": ""
-    }
+    ]
   }
 }

@@ -14,13 +14,21 @@
         "buildType": "apk"
       },
       "env": {
-        "API_BASE_URL": "https://api.quevesve.app"
+        "API_BASE_URL": "https://api.quevesve.app",
+        "GOOGLE_WEB_CLIENT_ID": "",
+        "GOOGLE_ANDROID_CLIENT_ID": "",
+        "GOOGLE_IOS_CLIENT_ID": "",
+        "FACEBOOK_APP_ID": ""
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "API_BASE_URL": "https://api.quevesve.app"
+        "API_BASE_URL": "https://api.quevesve.app",
+        "GOOGLE_WEB_CLIENT_ID": "",
+        "GOOGLE_ANDROID_CLIENT_ID": "",
+        "GOOGLE_IOS_CLIENT_ID": "",
+        "FACEBOOK_APP_ID": ""
       },
       "android": {
         "buildType": "app-bundle"

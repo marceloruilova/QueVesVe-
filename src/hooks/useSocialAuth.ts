@@ -6,8 +6,7 @@ import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
 import { useAuth } from '../contexts/AuthContext';
 
-// Disabled until production OAuth credentials are configured
-const SOCIAL_AUTH_ENABLED = false;
+const SOCIAL_AUTH_ENABLED = true;
 
 WebBrowser.maybeCompleteAuthSession();
 
