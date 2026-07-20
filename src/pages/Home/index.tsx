@@ -1,14 +1,18 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { View, PanResponder, Text as RNText, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View, PanResponder, Text as RNText, ScrollView, TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
 
 import PagerView from 'react-native-pager-view';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 
 import { getFeed, FeedItem } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import Feed from './Feed';
 
-import { Container, Header, Text, Tab, Separator } from './styles';
+import { Container, TopBar, Header, Text, Tab, Separator } from './styles';
 
 const CATEGORY_PILLS: { key: string | null; label: string }[] = [
   { key: null, label: 'Todo' },
@@ -68,34 +72,38 @@ const Home: React.FC = () => {
 
   return (
     <Container>
-      <Header {...panResponder.panHandlers}>
-        <Tab onPress={() => { setTab(1); setActive(0); }}>
-          <Text active={tab === 1}>Siguiendo</Text>
-        </Tab>
-        <Separator>|</Separator>
-        <Tab onPress={() => { setTab(2); setActive(0); }}>
-          <Text active={tab === 2}>Para vos</Text>
-        </Tab>
-      </Header>
+      <TopBar>
+        <SafeAreaView edges={['top']}>
+          <Header {...panResponder.panHandlers}>
+            <Tab onPress={() => { setTab(1); setActive(0); }}>
+              <Text active={tab === 1}>Siguiendo</Text>
+            </Tab>
+            <Separator>|</Separator>
+            <Tab onPress={() => { setTab(2); setActive(0); }}>
+              <Text active={tab === 2}>Para vos</Text>
+            </Tab>
+          </Header>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={pillStyles.row}
-        contentContainerStyle={pillStyles.rowContent}
-      >
-        {CATEGORY_PILLS.map(pill => (
-          <TouchableOpacity
-            key={String(pill.key)}
-            style={[pillStyles.pill, selectedCategory === pill.key && pillStyles.pillActive]}
-            onPress={() => handleCategorySelect(pill.key)}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={pillStyles.row}
+            contentContainerStyle={pillStyles.rowContent}
           >
-            <RNText style={[pillStyles.pillText, selectedCategory === pill.key && pillStyles.pillTextActive]}>
-              {pill.label}
-            </RNText>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+            {CATEGORY_PILLS.map(pill => (
+              <TouchableOpacity
+                key={String(pill.key)}
+                style={[pillStyles.pill, selectedCategory === pill.key && pillStyles.pillActive]}
+                onPress={() => handleCategorySelect(pill.key)}
+              >
+                <RNText style={[pillStyles.pillText, selectedCategory === pill.key && pillStyles.pillTextActive]}>
+                  {pill.label}
+                </RNText>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </SafeAreaView>
+      </TopBar>
 
       {isEmpty ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -127,6 +135,7 @@ const pillStyles = StyleSheet.create({
   row: {
     maxHeight: 40,
     flexGrow: 0,
+    marginTop: 8,
   },
   rowContent: {
     paddingHorizontal: 12,

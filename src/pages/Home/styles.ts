@@ -15,14 +15,18 @@ export const Separator = styled.Text`
   opacity: 0.2;
 `;
 
-export const Header = styled.View`
-  height: 10%;
-  flex-direction: row;
+export const TopBar = styled.View`
   position: absolute;
-  align-self: center;
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 10;
+`;
+
+export const Header = styled.View`
+  flex-direction: row;
+  align-self: center;
   align-items: center;
-  margin-top: 5%;
 `;
 export const Text = styled.Text<Props>`
   color: #fff;
