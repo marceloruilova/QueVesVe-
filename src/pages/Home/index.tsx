@@ -4,6 +4,7 @@ import {
   StyleSheet,
 } from 'react-native';
 
+import { AntDesign } from '@expo/vector-icons';
 import PagerView from 'react-native-pager-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useIsFocused } from '@react-navigation/native';
@@ -12,7 +13,7 @@ import { getFeed, FeedItem } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import Feed from './Feed';
 
-import { Container, TopBar, Header, Text, Tab, Separator } from './styles';
+import { Container, TopBar, HeaderRow, Header, Text, Tab, Separator, ToggleButton } from './styles';
 
 const CATEGORY_PILLS: { key: string | null; label: string }[] = [
   { key: null, label: 'Todo' },
@@ -36,6 +37,7 @@ const Home: React.FC = () => {
   const [active, setActive] = useState(0);
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [uiVisible, setUiVisible] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
@@ -74,34 +76,46 @@ const Home: React.FC = () => {
     <Container>
       <TopBar>
         <SafeAreaView edges={['top']}>
-          <Header {...panResponder.panHandlers}>
-            <Tab onPress={() => { setTab(1); setActive(0); }}>
-              <Text active={tab === 1}>Siguiendo</Text>
-            </Tab>
-            <Separator>|</Separator>
-            <Tab onPress={() => { setTab(2); setActive(0); }}>
-              <Text active={tab === 2}>Para vos</Text>
-            </Tab>
-          </Header>
+          <HeaderRow>
+            {uiVisible && (
+              <Header {...panResponder.panHandlers}>
+                <Tab onPress={() => { setTab(1); setActive(0); }}>
+                  <Text active={tab === 1}>Siguiendo</Text>
+                </Tab>
+                <Separator>|</Separator>
+                <Tab onPress={() => { setTab(2); setActive(0); }}>
+                  <Text active={tab === 2}>Para vos</Text>
+                </Tab>
+              </Header>
+            )}
+            <ToggleButton
+              onPress={() => setUiVisible(prev => !prev)}
+              testID="toggle-ui-button"
+            >
+              <AntDesign name={uiVisible ? 'minus' : 'plus'} size={12} color="#fff" />
+            </ToggleButton>
+          </HeaderRow>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={pillStyles.row}
-            contentContainerStyle={pillStyles.rowContent}
-          >
-            {CATEGORY_PILLS.map(pill => (
-              <TouchableOpacity
-                key={String(pill.key)}
-                style={[pillStyles.pill, selectedCategory === pill.key && pillStyles.pillActive]}
-                onPress={() => handleCategorySelect(pill.key)}
-              >
-                <RNText style={[pillStyles.pillText, selectedCategory === pill.key && pillStyles.pillTextActive]}>
-                  {pill.label}
-                </RNText>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+          {uiVisible && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={pillStyles.row}
+              contentContainerStyle={pillStyles.rowContent}
+            >
+              {CATEGORY_PILLS.map(pill => (
+                <TouchableOpacity
+                  key={String(pill.key)}
+                  style={[pillStyles.pill, selectedCategory === pill.key && pillStyles.pillActive]}
+                  onPress={() => handleCategorySelect(pill.key)}
+                >
+                  <RNText style={[pillStyles.pillText, selectedCategory === pill.key && pillStyles.pillTextActive]}>
+                    {pill.label}
+                  </RNText>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
         </SafeAreaView>
       </TopBar>
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 
 const mockGetFeed = jest.fn();
 const mockIsFocused = jest.fn();
@@ -91,5 +91,42 @@ describe('Home — pausa el video activo al perder el foco (cambio de tab)', () 
     const video = await findByTestId('feed-1');
 
     expect(video.props.play).toBe(false);
+  });
+});
+
+// El botoncito de "-" permite ocultar los tabs (Siguiendo/Para vos) y las
+// categorías (Todo/Naturaleza/Animales/...) para dejar la pantalla limpia,
+// volviendo a mostrarlos al tocarlo de nuevo.
+describe('Home — botón para ocultar/mostrar tabs y categorías', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetFeed.mockResolvedValue(feedItems);
+    mockIsFocused.mockReturnValue(true);
+  });
+
+  it('muestra los tabs y las categorías por defecto', async () => {
+    const { findByTestId, getByText } = await render(<Home />);
+    await findByTestId('feed-1');
+
+    expect(getByText('Siguiendo')).toBeTruthy();
+    expect(getByText('Para vos')).toBeTruthy();
+    expect(getByText('Todo')).toBeTruthy();
+  });
+
+  it('oculta los tabs y categorías al tocar el botón, y los vuelve a mostrar al tocarlo de nuevo', async () => {
+    const { findByTestId, getByTestId, queryByText } = await render(<Home />);
+    await findByTestId('feed-1');
+
+    await fireEvent.press(getByTestId('toggle-ui-button'));
+
+    expect(queryByText('Siguiendo')).toBeNull();
+    expect(queryByText('Para vos')).toBeNull();
+    expect(queryByText('Todo')).toBeNull();
+
+    await fireEvent.press(getByTestId('toggle-ui-button'));
+
+    expect(queryByText('Siguiendo')).toBeTruthy();
+    expect(queryByText('Para vos')).toBeTruthy();
+    expect(queryByText('Todo')).toBeTruthy();
   });
 });

@@ -23,10 +23,28 @@ export const TopBar = styled.View`
   z-index: 10;
 `;
 
-export const Header = styled.View`
+export const HeaderRow = styled.View`
   flex-direction: row;
   align-self: center;
   align-items: center;
+  justify-content: center;
+`;
+
+export const Header = styled.View`
+  flex-direction: row;
+  align-items: center;
+`;
+
+export const ToggleButton = styled.TouchableOpacity`
+  width: 22px;
+  height: 22px;
+  border-radius: 11px;
+  margin-left: 10px;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.4);
 `;
 export const Text = styled.Text<Props>`
   color: #fff;
