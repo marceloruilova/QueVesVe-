@@ -42,6 +42,10 @@ import {
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CELL_SIZE = SCREEN_WIDTH / 3 - 1;
 
+// Íconos sin funcionalidad todavía (agregar cuenta, cambiar de cuenta, guardados).
+// Se ocultan sin borrarlos para poder reactivarlos cuando tengan una acción real.
+const SHOW_PLACEHOLDER_ICONS = false;
+
 const Me: React.FC = () => {
   const { user, accessToken, logout } = useAuth();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
@@ -122,7 +126,7 @@ const Me: React.FC = () => {
         <ProfileEdit onPress={() => navigation.navigate('EditProfile')}>
           <ProfileText>Editar perfil</ProfileText>
         </ProfileEdit>
-        <Bookmark name="bookmark" size={24} color="black" />
+        {SHOW_PLACEHOLDER_ICONS && <Bookmark name="bookmark" size={24} color="black" />}
       </ProfileColumn>
       <StatsText>{user?.bio || 'Tocá para agregar una bio'}</StatsText>
 
@@ -170,14 +174,18 @@ const Me: React.FC = () => {
   return (
     <Container>
       <Header>
-        <AntDesign
-          style={{ position: 'absolute', left: 10, top: 10 }}
-          name="user-add"
-          size={24}
-          color="black"
-        />
+        {SHOW_PLACEHOLDER_ICONS && (
+          <AntDesign
+            style={{ position: 'absolute', left: 10, top: 10 }}
+            name="user-add"
+            size={24}
+            color="black"
+          />
+        )}
         <Title>{user?.username ?? ''}</Title>
-        <MaterialIcons name="arrow-drop-down" size={24} color="black" />
+        {SHOW_PLACEHOLDER_ICONS && (
+          <MaterialIcons name="arrow-drop-down" size={24} color="black" />
+        )}
         <TouchableOpacity
           style={{ position: 'absolute', right: 4, top: 2, padding: 12 }}
           onPress={handleLogout}
