@@ -194,8 +194,8 @@ const Me: React.FC = () => {
         ListHeaderComponent={ProfileHeader}
         columnWrapperStyle={{ gap: 1 }}
         ItemSeparatorComponent={() => <View style={{ height: 1 }} />}
-        renderItem={({ item }) => (
-          <View
+        renderItem={({ item, index }) => (
+          <TouchableOpacity
             style={{
               width: CELL_SIZE,
               height: CELL_SIZE * 1.4,
@@ -203,6 +203,11 @@ const Me: React.FC = () => {
               justifyContent: 'center',
               alignItems: 'center',
             }}
+            activeOpacity={0.8}
+            testID="me-video-cell"
+            onPress={() =>
+              user && navigation.navigate('VideoViewer', { userId: user.id, startIndex: index })
+            }
           >
             {item.thumbnail_url ? (
               <Image
@@ -213,7 +218,7 @@ const Me: React.FC = () => {
             ) : (
               <FontAwesome name="play" size={24} color="rgba(255,255,255,0.5)" />
             )}
-          </View>
+          </TouchableOpacity>
         )}
         ListEmptyComponent={
           <View style={{ alignItems: 'center', marginTop: 40 }}>
