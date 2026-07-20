@@ -6,9 +6,8 @@ interface TabProps {
   active: boolean;
 }
 
-export const Container = styled.View.attrs({
-  paddingTop: StatusBar.currentHeight || 44,
-})`
+export const Container = styled.View`
+  padding-top: ${StatusBar.currentHeight || 44}px;
   flex: 1;
   background: #fff;
 `;

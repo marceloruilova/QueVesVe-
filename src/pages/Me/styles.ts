@@ -3,9 +3,8 @@ import { StatusBar } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import styled from 'styled-components/native';
 
-export const Container = styled.View.attrs({
-  paddingTop: StatusBar.currentHeight || 44,
-})`
+export const Container = styled.View`
+  padding-top: ${StatusBar.currentHeight || 44}px;
   flex: 1;
   background: #fff;
 `;
@@ -79,7 +78,7 @@ export const ProfileText = styled.Text`
 `;
 
 export const ProfileEdit = styled.TouchableOpacity.attrs({
-  activityOpacity: 1,
+  activeOpacity: 1,
 })`
   border-width: 1.5px;
   padding: 10px 30px;

@@ -4,7 +4,7 @@ interface Props {
   home: boolean;
 }
 
-export const Container = styled.View`
+export const Container = styled.View<Props>`
   top: 3px;
   width: 45px;
   height: 30px;

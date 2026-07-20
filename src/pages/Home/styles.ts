@@ -24,7 +24,7 @@ export const Header = styled.View`
   align-items: center;
   margin-top: 5%;
 `;
-export const Text = styled.Text`
+export const Text = styled.Text<Props>`
   color: #fff;
   font-size: ${(props: Props) => (props.active ? '20px' : '18px')};
   padding: 5px;

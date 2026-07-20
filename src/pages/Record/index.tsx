@@ -8,9 +8,11 @@ import {
   Ionicons,
 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { CameraView, CameraType, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 
+import { RootStackParamList } from '../../types/navigation';
 import {
   Container,
   RecordButton,
@@ -26,7 +28,7 @@ const Record: React.FC = () => {
   const [micPermission, requestMicPermission] = useMicrophonePermissions();
   const [isRecording, setIsRecording] = useState(false);
   const cameraRef = useRef<CameraView>(null);
-  const navigation = useNavigation();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     StatusBar.setHidden(true);
@@ -48,7 +50,7 @@ const Record: React.FC = () => {
       const result = await cameraRef.current?.recordAsync({ maxDuration: 60 });
       if (result?.uri) {
         StatusBar.setHidden(false);
-        navigation.navigate('UploadVideo' as never, { videoUri: result.uri } as never);
+        navigation.navigate('UploadVideo', { videoUri: result.uri });
       }
     } catch {
       Alert.alert('Error', 'No se pudo grabar el video.');
@@ -65,7 +67,7 @@ const Record: React.FC = () => {
 
     if (!result.canceled && result.assets[0]?.uri) {
       StatusBar.setHidden(false);
-      navigation.navigate('UploadVideo' as never, { videoUri: result.assets[0].uri } as never);
+      navigation.navigate('UploadVideo', { videoUri: result.assets[0].uri });
     }
   };
 

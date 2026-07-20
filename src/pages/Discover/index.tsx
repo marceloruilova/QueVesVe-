@@ -203,7 +203,7 @@ const Discover: React.FC = () => {
             color="#838383"
           />
           <Input
-            ref={inputRef}
+            {...({ ref: inputRef } as object)}
             placeholder={SEARCH_PLACEHOLDERS[activeTab]}
             editable={SEARCHABLE_TABS.includes(activeTab)}
             value={query}

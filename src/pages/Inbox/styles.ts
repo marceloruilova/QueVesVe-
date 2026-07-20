@@ -1,9 +1,8 @@
 import { StatusBar } from 'react-native';
 import styled from 'styled-components/native';
 
-export const Container = styled.View.attrs({
-  paddingTop: StatusBar.currentHeight || 44,
-})`
+export const Container = styled.View`
+  padding-top: ${StatusBar.currentHeight || 44}px;
   flex: 1;
   background: #fff;
 `;
@@ -110,12 +109,11 @@ export const ChatContainer = styled.View`
   background: #fff;
 `;
 
-export const ChatHeader = styled.View.attrs({
-  paddingTop: StatusBar.currentHeight || 44,
-})`
+export const ChatHeader = styled.View`
   flex-direction: row;
   align-items: center;
   padding: 10px 16px;
+  padding-top: ${StatusBar.currentHeight || 44}px;
   border-bottom-width: 0.5px;
   border-bottom-color: #dadada;
   background: #fff;
