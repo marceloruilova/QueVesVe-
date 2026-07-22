@@ -214,7 +214,8 @@ export async function getFeed(accessToken: string, category?: string): Promise<F
   }
   if (!res.ok) throw new Error('Failed to fetch feed');
   try {
-    return await res.json();
+    const data = await res.json();
+    return data.results;
   } catch {
     throw new Error('Error del servidor. Intentá de nuevo.');
   }
@@ -234,7 +235,8 @@ export async function getUserVideos(userId: number, accessToken: string): Promis
   }
   if (!res.ok) throw new Error('Failed to fetch user videos');
   try {
-    return await res.json();
+    const data = await res.json();
+    return data.results;
   } catch {
     throw new Error('Error del servidor. Intentá de nuevo.');
   }
@@ -521,7 +523,8 @@ export async function searchVideos(query: string, accessToken: string): Promise<
   }
   if (!res.ok) throw new Error('Error al buscar videos');
   try {
-    return await res.json();
+    const data = await res.json();
+    return data.results;
   } catch {
     throw new Error('Error del servidor. Intentá de nuevo.');
   }
