@@ -1,4 +1,7 @@
 import { API_BASE_URL } from '../config/api';
+import { UploadRejectedError } from './uploadErrors';
+
+export { UploadRejectedError };
 
 export interface User {
   id: number;
@@ -25,6 +28,13 @@ export class ChatBlockedError extends Error {
     super(message);
     this.name = 'ChatBlockedError';
   }
+}
+
+export interface UploadQuota {
+  used_bytes: number;
+  limit_bytes: number;
+  remaining_bytes: number;
+  used_pct: number;
 }
 
 export interface LoginResponse {
@@ -230,12 +240,33 @@ export async function getUserVideos(userId: number, accessToken: string): Promis
   }
 }
 
+export async function getUploadQuota(accessToken: string): Promise<UploadQuota> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/videos/quota/`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  if (!res.ok) throw new Error('Failed to fetch upload quota');
+  try {
+    return await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
+}
+
 export async function uploadVideo(
   videoUri: string,
   description: string,
   tags: string,
   music: string,
   accessToken: string,
+  clientCompressed: boolean,
 ): Promise<void> {
   const formData = new FormData();
   formData.append('video_file', {
@@ -246,13 +277,29 @@ export async function uploadVideo(
   formData.append('description', description);
   formData.append('tags', tags);
   formData.append('music', music);
+  formData.append('client_compressed', clientCompressed ? 'true' : 'false');
 
   const res = await fetch(`${API_BASE_URL}/videos/`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
     body: formData,
   });
-  if (!res.ok) throw new Error('Failed to upload video');
+  if (!res.ok) {
+    let data: { error?: string; detail?: string } = {};
+    try {
+      data = await res.json();
+    } catch {
+      // respuesta sin body JSON, se usa el mensaje genérico de abajo
+    }
+    if (data.error === 'quota_exceeded' || data.error === 'duration_exceeded') {
+      throw new UploadRejectedError(
+        data.detail || 'No se pudo subir el video.',
+        data.error,
+        data as Record<string, unknown>,
+      );
+    }
+    throw new UploadRejectedError('No se pudo subir el video. Intentá de nuevo.', 'other');
+  }
 }
 
 export async function updateVideo(

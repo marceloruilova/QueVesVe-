@@ -65,10 +65,16 @@ const Record: React.FC = () => {
       quality: 1,
     });
 
-    if (!result.canceled && result.assets[0]?.uri) {
-      StatusBar.setHidden(false);
-      navigation.navigate('UploadVideo', { videoUri: result.assets[0].uri });
+    if (result.canceled || !result.assets[0]?.uri) return;
+
+    const { duration } = result.assets[0];
+    if (typeof duration === 'number' && duration > 60000) {
+      Alert.alert('Video muy largo', 'El video no puede superar los 60 segundos.');
+      return;
     }
+
+    StatusBar.setHidden(false);
+    navigation.navigate('UploadVideo', { videoUri: result.assets[0].uri });
   };
 
   if (!cameraPermission || !micPermission) return <View />;

@@ -6,6 +6,7 @@ const config = getDefaultConfig(__dirname);
 const webStubs = {
   'react-native-pager-view': path.resolve(__dirname, 'src/stubs/PagerViewStub.tsx'),
   'lottie-react-native': path.resolve(__dirname, 'src/stubs/LottieStub.tsx'),
+  'react-native-compressor': path.resolve(__dirname, 'src/stubs/CompressorStub.tsx'),
 };
 
 const originalResolver = config.resolver.resolveRequest;

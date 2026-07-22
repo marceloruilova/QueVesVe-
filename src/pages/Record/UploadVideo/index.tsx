@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,16 +10,24 @@ import {
   Alert,
 } from 'react-native';
 
-import { Video, ResizeMode } from 'expo-av';
+import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
+import { Video as CompressorVideo } from 'react-native-compressor';
+import * as FileSystem from 'expo-file-system/legacy';
 import { AntDesign } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 
-import { uploadVideo } from '../../../services/api';
+import { uploadVideo, getUploadQuota, UploadQuota, UploadRejectedError } from '../../../services/api';
 import { useAuth } from '../../../contexts/AuthContext';
+
+const MAX_DURATION_MS = 60000;
 
 type UploadVideoRouteParams = {
   UploadVideo: { videoUri: string };
 };
+
+function formatMB(bytes: number): string {
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+}
 
 const UploadVideo: React.FC = () => {
   const navigation = useNavigation();
@@ -32,18 +40,102 @@ const UploadVideo: React.FC = () => {
   const [music, setMusic] = useState('');
   const [uploading, setUploading] = useState(false);
 
-  const handleUpload = async () => {
+  const [quota, setQuota] = useState<UploadQuota | null>(null);
+  const [compressing, setCompressing] = useState(true);
+  const [compressProgress, setCompressProgress] = useState(0);
+  const [finalUri, setFinalUri] = useState(videoUri);
+  const [clientCompressed, setClientCompressed] = useState(false);
+  const [tooLong, setTooLong] = useState(false);
+  const [notEnoughSpace, setNotEnoughSpace] = useState(false);
+
+  useEffect(() => {
     if (!accessToken) return;
+    getUploadQuota(accessToken)
+      .then(setQuota)
+      .catch(() => {
+        // si falla, no bloqueamos acá — el servidor vuelve a validar la cuota igual
+      });
+  }, [accessToken]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    CompressorVideo.compress(
+      videoUri,
+      { compressionMethod: 'auto' },
+      (progress) => {
+        if (!cancelled) setCompressProgress(progress);
+      },
+    )
+      .then((output) => {
+        if (cancelled) return;
+        setFinalUri(output);
+        setClientCompressed(output !== videoUri);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setFinalUri(videoUri);
+        setClientCompressed(false);
+      })
+      .finally(() => {
+        if (!cancelled) setCompressing(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [videoUri]);
+
+  useEffect(() => {
+    if (compressing || !quota) return;
+    FileSystem.getInfoAsync(finalUri)
+      .then((info) => {
+        if (info.exists && typeof info.size === 'number') {
+          setNotEnoughSpace(info.size > quota.remaining_bytes);
+        }
+      })
+      .catch(() => {
+        // si falla, no bloqueamos acá — el servidor vuelve a validar la cuota igual
+      });
+  }, [compressing, finalUri, quota]);
+
+  const handlePlaybackStatus = (status: AVPlaybackStatus) => {
+    if (status.isLoaded && typeof status.durationMillis === 'number') {
+      setTooLong(status.durationMillis > MAX_DURATION_MS);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!accessToken || compressing) return;
+    if (tooLong) {
+      Alert.alert('Video muy largo', 'El video no puede superar los 60 segundos.');
+      return;
+    }
+    if (notEnoughSpace) {
+      Alert.alert(
+        'Espacio insuficiente',
+        'No tenés espacio suficiente disponible. Borrá videos viejos para poder subir uno nuevo.',
+      );
+      return;
+    }
     setUploading(true);
     try {
-      await uploadVideo(videoUri, description, tags, music, accessToken);
+      await uploadVideo(finalUri, description, tags, music, accessToken, clientCompressed);
       navigation.navigate('Main' as never);
-    } catch {
-      Alert.alert('Error', 'No se pudo subir el video. Intentá de nuevo.');
+    } catch (err) {
+      if (err instanceof UploadRejectedError && err.reason === 'quota_exceeded') {
+        Alert.alert('Espacio insuficiente', err.message);
+      } else if (err instanceof UploadRejectedError && err.reason === 'duration_exceeded') {
+        Alert.alert('Video muy largo', err.message);
+      } else {
+        Alert.alert('Error', 'No se pudo subir el video. Intentá de nuevo.');
+      }
     } finally {
       setUploading(false);
     }
   };
+
+  const publishDisabled = uploading || compressing || tooLong || notEnoughSpace;
 
   return (
     <View style={styles.container}>
@@ -57,14 +149,37 @@ const UploadVideo: React.FC = () => {
 
       <View style={styles.previewContainer}>
         <Video
-          source={{ uri: videoUri }}
+          source={{ uri: finalUri }}
           style={styles.preview}
           resizeMode={ResizeMode.COVER}
           isLooping
           isMuted
           shouldPlay
+          onPlaybackStatusUpdate={handlePlaybackStatus}
         />
+        {compressing && (
+          <View style={styles.compressingOverlay}>
+            <ActivityIndicator color="#fff" />
+            <Text style={styles.compressingText}>
+              Optimizando video... {Math.round(compressProgress * 100)}%
+            </Text>
+          </View>
+        )}
       </View>
+
+      {tooLong && (
+        <Text style={styles.warningText}>El video supera los 60 segundos.</Text>
+      )}
+      {notEnoughSpace && (
+        <Text style={styles.warningText}>
+          No tenés espacio suficiente disponible. Borrá videos viejos para subir este.
+        </Text>
+      )}
+      {quota && (
+        <Text style={styles.quotaText}>
+          Almacenamiento usado: {formatMB(quota.used_bytes)} / {formatMB(quota.limit_bytes)}
+        </Text>
+      )}
 
       <ScrollView style={styles.form} keyboardShouldPersistTaps="handled">
         <Text style={styles.label}>Descripción</Text>
@@ -99,9 +214,9 @@ const UploadVideo: React.FC = () => {
         />
 
         <TouchableOpacity
-          style={[styles.uploadButton, uploading && styles.uploadButtonDisabled]}
+          style={[styles.uploadButton, publishDisabled && styles.uploadButtonDisabled]}
           onPress={handleUpload}
-          disabled={uploading}
+          disabled={publishDisabled}
         >
           {uploading ? (
             <ActivityIndicator color="#fff" />
@@ -143,6 +258,30 @@ const styles = StyleSheet.create({
   },
   preview: {
     flex: 1,
+  },
+  compressingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  compressingText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 10,
+  },
+  warningText: {
+    color: '#E5363A',
+    fontSize: 13,
+    marginHorizontal: 16,
+    marginTop: 10,
+  },
+  quotaText: {
+    color: '#888',
+    fontSize: 12,
+    marginHorizontal: 16,
+    marginTop: 8,
   },
   form: {
     flex: 1,
