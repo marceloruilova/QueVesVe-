@@ -2,6 +2,7 @@
   "expo": {
     "name": "QueVesVe!&",
     "slug": "quevesve",
+    "owner": "ccognitions",
     "scheme": "quevesve",
     "privacy": "public",
     "platforms": ["ios", "android", "web"],
@@ -32,6 +33,11 @@
     },
     "plugins": [
       "expo-web-browser"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "a778f3e8-5507-4025-a4bc-5f36f5031008"
+      }
+    }
   }
 }
