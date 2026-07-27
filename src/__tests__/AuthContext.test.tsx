@@ -1,5 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 const mockLoginUser = jest.fn();
 const mockRegisterUser = jest.fn();
@@ -10,6 +11,23 @@ const mockRefreshAccessToken = jest.fn();
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
+
+// expo-secure-store no trae mock de jest; simulamos su API con un Map en memoria.
+jest.mock('expo-secure-store', () => {
+  const store = new Map<string, string>();
+  return {
+    getItemAsync: jest.fn((key: string) => Promise.resolve(store.get(key) ?? null)),
+    setItemAsync: jest.fn((key: string, value: string) => {
+      store.set(key, value);
+      return Promise.resolve();
+    }),
+    deleteItemAsync: jest.fn((key: string) => {
+      store.delete(key);
+      return Promise.resolve();
+    }),
+    __clear: () => store.clear(),
+  };
+});
 
 jest.mock('../services/api', () => ({
   loginUser: (...args: unknown[]) => mockLoginUser(...args),
@@ -36,6 +54,7 @@ describe('AuthContext — renovación automática de access token', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     await AsyncStorage.clear();
+    (SecureStore as unknown as { __clear: () => void }).__clear();
   });
 
   afterEach(() => {
@@ -47,8 +66,8 @@ describe('AuthContext — renovación automática de access token', () => {
     const refreshToken = 'refresh-abc';
     const freshToken = makeToken(1800);
 
-    await AsyncStorage.setItem('accessToken', expiredToken);
-    await AsyncStorage.setItem('refreshToken', refreshToken);
+    await SecureStore.setItemAsync('accessToken', expiredToken);
+    await SecureStore.setItemAsync('refreshToken', refreshToken);
     await AsyncStorage.setItem('userId', '1');
 
     mockRefreshAccessToken.mockResolvedValue({ access: freshToken });
@@ -66,8 +85,8 @@ describe('AuthContext — renovación automática de access token', () => {
   });
 
   it('si el refresh token también es inválido, cierra la sesión en vez de dejar un token vencido', async () => {
-    await AsyncStorage.setItem('accessToken', makeToken(-120));
-    await AsyncStorage.setItem('refreshToken', 'refresh-invalido');
+    await SecureStore.setItemAsync('accessToken', makeToken(-120));
+    await SecureStore.setItemAsync('refreshToken', 'refresh-invalido');
     await AsyncStorage.setItem('userId', '1');
 
     mockRefreshAccessToken.mockRejectedValue(new Error('No se pudo renovar la sesión.'));
@@ -78,7 +97,7 @@ describe('AuthContext — renovación automática de access token', () => {
 
     expect(result.current.accessToken).toBeNull();
     expect(mockGetUserProfile).not.toHaveBeenCalled();
-    expect(await AsyncStorage.getItem('accessToken')).toBeNull();
+    expect(await SecureStore.getItemAsync('accessToken')).toBeNull();
   });
 
   it('renueva el access token proactivamente antes de que expire, sin esperar un 401', async () => {

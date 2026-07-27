@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Equivalente a backup_rules.xml para Android 12+ (dataExtractionRules),
+  cubre tanto cloud-backup como transferencia device-to-device.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="database" path="RKStorage"/>
+        <exclude domain="database" path="AsyncStorage"/>
+        <exclude domain="sharedpref" path="SecureStore.xml"/>
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="database" path="RKStorage"/>
+        <exclude domain="database" path="AsyncStorage"/>
+        <exclude domain="sharedpref" path="SecureStore.xml"/>
+    </device-transfer>
+</data-extraction-rules>

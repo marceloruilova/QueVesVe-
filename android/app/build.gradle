@@ -124,15 +124,27 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            // El keystore de release NUNCA vive en el repo: sus datos vienen de
+            // variables de entorno o de un gradle.properties local/CI no versionado
+            // (~/.gradle/gradle.properties o -P en la invocación de gradle). Si no
+            // están seteados, un build de release falla en vez de firmar en
+            // silencio con el keystore de debug (contraseña pública, conocida).
+            def storeFilePath = System.getenv('QUEVESVE_RELEASE_STORE_FILE') ?: findProperty('QUEVESVE_RELEASE_STORE_FILE')
+            if (storeFilePath) {
+                storeFile file(storeFilePath)
+                storePassword System.getenv('QUEVESVE_RELEASE_STORE_PASSWORD') ?: findProperty('QUEVESVE_RELEASE_STORE_PASSWORD')
+                keyAlias System.getenv('QUEVESVE_RELEASE_KEY_ALIAS') ?: findProperty('QUEVESVE_RELEASE_KEY_ALIAS')
+                keyPassword System.getenv('QUEVESVE_RELEASE_KEY_PASSWORD') ?: findProperty('QUEVESVE_RELEASE_KEY_PASSWORD')
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             shrinkResources (findProperty('android.enableShrinkResourcesInReleaseBuilds')?.toBoolean() ?: false)
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"

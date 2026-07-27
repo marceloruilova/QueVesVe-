@@ -29,6 +29,19 @@ export function useSocialAuth() {
     iosClientId: 'disabled',
   };
 
+  // SEGURIDAD — antes de reactivar SOCIAL_AUTH_ENABLED para Facebook:
+  // expo-auth-session usa implicit grant (ResponseType.Token) por default para
+  // Facebook, y el token vuelve en el fragmento de la URL de redirect por un
+  // custom scheme (quevesve://, com.quevesve.app://) que Android no garantiza
+  // como exclusivo — otra app podría registrar el mismo scheme e interceptarlo.
+  // A diferencia de Google, el provider de Facebook de expo-auth-session NO
+  // implementa exchange automático de code+PKCE (revisar
+  // node_modules/expo-auth-session/build/providers/Facebook.js): el endpoint
+  // de token de Facebook exige app secret para intercambiar el code, así que
+  // no se puede hacer ese exchange de forma seguro desde el cliente como con
+  // Google. Antes de reactivar esto, mover el intercambio de `code` a un
+  // endpoint del backend (que sí puede guardar FACEBOOK_APP_SECRET) en vez de
+  // simplemente cambiar responseType a Code acá.
   const fbConfig = SOCIAL_AUTH_ENABLED ? {
     clientId: extra.facebookAppId || '',
   } : {

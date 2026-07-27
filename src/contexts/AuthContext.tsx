@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { loginUser, registerUser, getUserProfile, decodeJWT, socialAuth, refreshAccessToken, User } from '../services/api';
 
 interface AuthContextType {
@@ -28,6 +29,24 @@ function getExpiryMs(token: string): number {
   return exp * 1000;
 }
 
+// Los tokens JWT viajan a SecureStore (Keychain/Keystore, cifrado en reposo);
+// AsyncStorage no cifra, así que no es apto para credenciales de sesión.
+async function storeSession(access: string, refresh: string, userId: string): Promise<void> {
+  await Promise.all([
+    SecureStore.setItemAsync('accessToken', access),
+    SecureStore.setItemAsync('refreshToken', refresh),
+    AsyncStorage.setItem('userId', userId),
+  ]);
+}
+
+async function clearStoredSession(): Promise<void> {
+  await Promise.all([
+    SecureStore.deleteItemAsync('accessToken'),
+    SecureStore.deleteItemAsync('refreshToken'),
+    AsyncStorage.removeItem('userId'),
+  ]);
+}
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -51,12 +70,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const doRefresh = async (): Promise<string | null> => {
-    const rt = refreshTokenRef.current ?? (await AsyncStorage.getItem('refreshToken'));
+    const rt = refreshTokenRef.current ?? (await SecureStore.getItemAsync('refreshToken'));
     if (!rt) return null;
     try {
       const { access } = await refreshAccessToken(rt);
       setAccessToken(access);
-      await AsyncStorage.setItem('accessToken', access);
+      await SecureStore.setItemAsync('accessToken', access);
       scheduleRefresh(access);
       return access;
     } catch {
@@ -82,8 +101,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const restoreSession = async () => {
       try {
-        const token = await AsyncStorage.getItem('accessToken');
-        const refreshToken = await AsyncStorage.getItem('refreshToken');
+        const token = await SecureStore.getItemAsync('accessToken');
+        const refreshToken = await SecureStore.getItemAsync('refreshToken');
         const userId = await AsyncStorage.getItem('userId');
         if (!token || !userId) return;
 
@@ -101,7 +120,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setAccessToken(validToken);
         setUser(profile);
       } catch {
-        await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'userId']);
+        await clearStoredSession();
       } finally {
         setLoading(false);
       }
@@ -120,9 +139,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setAccessToken(data.access);
     setUser(profile);
     scheduleRefresh(data.access);
-    await AsyncStorage.setItem('accessToken', data.access);
-    await AsyncStorage.setItem('refreshToken', data.refresh);
-    await AsyncStorage.setItem('userId', String(userId));
+    await storeSession(data.access, data.refresh, String(userId));
   };
 
   const register = async (username: string, email: string, password: string) => {
@@ -131,9 +148,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setAccessToken(data.access);
     setUser(data.user);
     scheduleRefresh(data.access);
-    await AsyncStorage.setItem('accessToken', data.access);
-    await AsyncStorage.setItem('refreshToken', data.refresh);
-    await AsyncStorage.setItem('userId', String(data.user.id));
+    await storeSession(data.access, data.refresh, String(data.user.id));
   };
 
   const socialLoginFn = async (provider: 'google' | 'facebook', token: string) => {
@@ -142,9 +157,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setAccessToken(data.access);
     setUser(data.user);
     scheduleRefresh(data.access);
-    await AsyncStorage.setItem('accessToken', data.access);
-    await AsyncStorage.setItem('refreshToken', data.refresh);
-    await AsyncStorage.setItem('userId', String(data.user.id));
+    await storeSession(data.access, data.refresh, String(data.user.id));
   };
 
   const logout = async () => {
@@ -152,7 +165,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     refreshTokenRef.current = null;
     setUser(null);
     setAccessToken(null);
-    await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'userId']);
+    await clearStoredSession();
   };
 
   const updateUser = (updated: User) => {
