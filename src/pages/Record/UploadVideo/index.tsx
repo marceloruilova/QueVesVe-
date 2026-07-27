@@ -11,15 +11,38 @@ import {
 } from 'react-native';
 
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
-import { Video as CompressorVideo } from 'react-native-compressor';
 import * as FileSystem from 'expo-file-system/legacy';
 import { AntDesign } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import Constants from 'expo-constants';
 
 import { uploadVideo, getUploadQuota, UploadQuota, UploadRejectedError } from '../../../services/api';
 import { useAuth } from '../../../contexts/AuthContext';
+import { Video as CompressorStubVideo } from '../../../stubs/CompressorStub';
 
 const MAX_DURATION_MS = 60000;
+
+type CompressorVideoModule = {
+  compress: (
+    uri: string,
+    options?: Record<string, unknown>,
+    onProgress?: (progress: number) => void,
+  ) => Promise<string>;
+};
+
+// react-native-compressor no está linkeado en Expo Go (requiere un dev client
+// nativo): construye un NativeEventEmitter al nivel del módulo, así que basta
+// con hacer `import` (ni siquiera llamar a .compress()) para que tire
+// "doesn't seem to be linked... You are not using Expo Go" y tumbe la
+// pantalla. Por eso el require es condicional -- en Expo Go ni se carga el
+// paquete real, se usa el mismo stub que ya existe para web. El backend
+// igual comprime del lado del servidor cuando client_compressed=false
+// (ver videos/views.py).
+const isExpoGo = Constants.appOwnership === 'expo';
+// eslint-disable-next-line global-require, @typescript-eslint/no-var-requires
+const CompressorVideo: CompressorVideoModule = isExpoGo
+  ? CompressorStubVideo
+  : require('react-native-compressor').Video;
 
 type UploadVideoRouteParams = {
   UploadVideo: { videoUri: string };
