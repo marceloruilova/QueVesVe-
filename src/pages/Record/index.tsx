@@ -47,7 +47,10 @@ const Record: React.FC = () => {
 
     setIsRecording(true);
     try {
-      const result = await cameraRef.current?.recordAsync({ maxDuration: 60 });
+      const result = await cameraRef.current?.recordAsync({
+        maxDuration: 180,
+        maxFileSize: 150 * 1024 * 1024,
+      });
       if (result?.uri) {
         StatusBar.setHidden(false);
         navigation.navigate('UploadVideo', { videoUri: result.uri });
@@ -68,8 +71,8 @@ const Record: React.FC = () => {
     if (result.canceled || !result.assets[0]?.uri) return;
 
     const { duration } = result.assets[0];
-    if (typeof duration === 'number' && duration > 60000) {
-      Alert.alert('Video muy largo', 'El video no puede superar los 60 segundos.');
+    if (typeof duration === 'number' && duration > 180000) {
+      Alert.alert('Video muy largo', 'El video no puede superar los 3 minutos.');
       return;
     }
 

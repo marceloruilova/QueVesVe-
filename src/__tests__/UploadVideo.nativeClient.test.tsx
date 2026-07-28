@@ -63,7 +63,7 @@ describe('UploadVideo fuera de Expo Go (dev client / producción)', () => {
     await waitFor(() => expect(mockCompress).toHaveBeenCalledTimes(1));
     expect(mockCompress).toHaveBeenCalledWith(
       'file:///tmp/original.mp4',
-      { compressionMethod: 'auto' },
+      { compressionMethod: 'auto', minimumFileSizeForCompress: 5 },
       expect.any(Function),
     );
 

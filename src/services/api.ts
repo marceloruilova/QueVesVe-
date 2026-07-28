@@ -293,7 +293,7 @@ export async function uploadVideo(
     } catch {
       // respuesta sin body JSON, se usa el mensaje genérico de abajo
     }
-    if (data.error === 'quota_exceeded' || data.error === 'duration_exceeded') {
+    if (data.error === 'quota_exceeded' || data.error === 'duration_exceeded' || data.error === 'file_too_large') {
       throw new UploadRejectedError(
         data.detail || 'No se pudo subir el video.',
         data.error,

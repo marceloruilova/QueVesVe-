@@ -20,7 +20,8 @@ import { uploadVideo, getUploadQuota, UploadQuota, UploadRejectedError } from '.
 import { useAuth } from '../../../contexts/AuthContext';
 import { Video as CompressorStubVideo } from '../../../stubs/CompressorStub';
 
-const MAX_DURATION_MS = 60000;
+const MAX_DURATION_MS = 180000;
+const MAX_UPLOAD_SIZE_BYTES = 150 * 1024 * 1024;
 
 type CompressorVideoModule = {
   compress: (
@@ -70,6 +71,7 @@ const UploadVideo: React.FC = () => {
   const [clientCompressed, setClientCompressed] = useState(false);
   const [tooLong, setTooLong] = useState(false);
   const [notEnoughSpace, setNotEnoughSpace] = useState(false);
+  const [tooLarge, setTooLarge] = useState(false);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -85,7 +87,7 @@ const UploadVideo: React.FC = () => {
 
     CompressorVideo.compress(
       videoUri,
-      { compressionMethod: 'auto' },
+      { compressionMethod: 'auto', minimumFileSizeForCompress: 5 },
       (progress) => {
         if (!cancelled) setCompressProgress(progress);
       },
@@ -110,15 +112,16 @@ const UploadVideo: React.FC = () => {
   }, [videoUri]);
 
   useEffect(() => {
-    if (compressing || !quota) return;
+    if (compressing) return;
     FileSystem.getInfoAsync(finalUri)
       .then((info) => {
         if (info.exists && typeof info.size === 'number') {
-          setNotEnoughSpace(info.size > quota.remaining_bytes);
+          setTooLarge(info.size > MAX_UPLOAD_SIZE_BYTES);
+          if (quota) setNotEnoughSpace(info.size > quota.remaining_bytes);
         }
       })
       .catch(() => {
-        // si falla, no bloqueamos acá — el servidor vuelve a validar la cuota igual
+        // si falla, no bloqueamos acá — el servidor vuelve a validar todo igual
       });
   }, [compressing, finalUri, quota]);
 
@@ -131,7 +134,11 @@ const UploadVideo: React.FC = () => {
   const handleUpload = async () => {
     if (!accessToken || compressing) return;
     if (tooLong) {
-      Alert.alert('Video muy largo', 'El video no puede superar los 60 segundos.');
+      Alert.alert('Video muy largo', 'El video no puede superar los 3 minutos.');
+      return;
+    }
+    if (tooLarge) {
+      Alert.alert('Video muy pesado', 'El video no puede superar los 150MB.');
       return;
     }
     if (notEnoughSpace) {
@@ -150,6 +157,8 @@ const UploadVideo: React.FC = () => {
         Alert.alert('Espacio insuficiente', err.message);
       } else if (err instanceof UploadRejectedError && err.reason === 'duration_exceeded') {
         Alert.alert('Video muy largo', err.message);
+      } else if (err instanceof UploadRejectedError && err.reason === 'file_too_large') {
+        Alert.alert('Video muy pesado', err.message);
       } else {
         Alert.alert('Error', 'No se pudo subir el video. Intentá de nuevo.');
       }
@@ -158,7 +167,7 @@ const UploadVideo: React.FC = () => {
     }
   };
 
-  const publishDisabled = uploading || compressing || tooLong || notEnoughSpace;
+  const publishDisabled = uploading || compressing || tooLong || tooLarge || notEnoughSpace;
 
   return (
     <View style={styles.container}>
@@ -191,7 +200,10 @@ const UploadVideo: React.FC = () => {
       </View>
 
       {tooLong && (
-        <Text style={styles.warningText}>El video supera los 60 segundos.</Text>
+        <Text style={styles.warningText}>El video supera los 3 minutos.</Text>
+      )}
+      {tooLarge && (
+        <Text style={styles.warningText}>El video supera los 150MB.</Text>
       )}
       {notEnoughSpace && (
         <Text style={styles.warningText}>
