@@ -47,7 +47,7 @@ const CELL_SIZE = SCREEN_WIDTH / 3 - 1;
 const SHOW_PLACEHOLDER_ICONS = false;
 
 const Me: React.FC = () => {
-  const { user, accessToken, logout } = useAuth();
+  const { user, accessToken, logout, refreshUser } = useAuth();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [videos, setVideos] = useState<FeedItem[]>([]);
   const [resendLoading, setResendLoading] = useState(false);
@@ -56,8 +56,13 @@ const Me: React.FC = () => {
     if (!accessToken) return;
     setResendLoading(true);
     try {
-      await resendVerificationEmail(accessToken);
-      Alert.alert('Email enviado', 'Revisá tu bandeja de entrada.');
+      const { detail } = await resendVerificationEmail(accessToken);
+      if (detail.includes('ya está verificado')) {
+        Alert.alert('Ya estás verificado', detail);
+        refreshUser();
+      } else {
+        Alert.alert('Email enviado', 'Revisá tu bandeja de entrada.');
+      }
     } catch (e: unknown) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo reenviar.');
     } finally {
@@ -68,9 +73,11 @@ const Me: React.FC = () => {
   useFocusEffect(
     useCallback(() => {
       if (!accessToken || !user) return;
+      refreshUser();
       getUserVideos(user.id, accessToken)
         .then(setVideos)
         .catch(() => setVideos([]));
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [accessToken, user]),
   );
 

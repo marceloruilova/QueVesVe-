@@ -123,4 +123,30 @@ describe('AuthContext — renovación automática de access token', () => {
 
     expect(mockRefreshAccessToken).toHaveBeenCalledWith('refresh-1');
   });
+
+  // Regresión: el banner de "verificá tu email" quedaba visible después de que
+  // el usuario confirmara el link en el navegador, porque nada volvía a pedir
+  // el perfil. refreshUser() es lo que las pantallas usan para corregir eso.
+  it('refreshUser() vuelve a pedir el perfil y actualiza el estado del usuario', async () => {
+    mockLoginUser.mockResolvedValue({ access: makeToken(300), refresh: 'refresh-1' });
+    mockGetUserProfile.mockResolvedValue({ id: 1, username: 'debugtest', email_verified: false });
+
+    const { result } = await renderHook(() => useAuth(), { wrapper: AuthProvider });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.login('debugtest', 'DebugPass123!');
+    });
+
+    expect(result.current.user?.email_verified).toBe(false);
+
+    mockGetUserProfile.mockResolvedValue({ id: 1, username: 'debugtest', email_verified: true });
+
+    await act(async () => {
+      await result.current.refreshUser();
+    });
+
+    expect(mockGetUserProfile).toHaveBeenLastCalledWith(1, expect.any(String));
+    expect(result.current.user?.email_verified).toBe(true);
+  });
 });

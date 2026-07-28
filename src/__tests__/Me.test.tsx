@@ -14,6 +14,7 @@ jest.mock('../contexts/AuthContext', () => ({
     user: { id: 7, username: 'me', email_verified: true, followers_count: 0, following_count: 0, bio: '' },
     accessToken: 'token-123',
     logout: jest.fn(),
+    refreshUser: jest.fn(),
   }),
 }));
 

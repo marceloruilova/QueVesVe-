@@ -13,6 +13,7 @@ interface AuthContextType {
   socialLogin: (provider: 'google' | 'facebook', token: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (updated: User) => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -172,8 +173,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(updated);
   };
 
+  const refreshUser = async () => {
+    if (!accessToken || !user) return;
+    try {
+      const profile = await getUserProfile(user.id, accessToken);
+      setUser(profile);
+    } catch {
+      // Silencioso: si falla el refetch, se mantiene el estado anterior.
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, accessToken, loading, login, register, socialLogin: socialLoginFn, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, accessToken, loading, login, register, socialLogin: socialLoginFn, logout, updateUser, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

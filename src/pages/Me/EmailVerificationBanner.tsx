@@ -31,6 +31,7 @@ const EmailVerificationBanner: React.FC<Props> = ({ email, loading, onResend }) 
     </View>
 
     <TouchableOpacity
+      testID="resend-verification-button"
       style={[styles.button, loading && styles.buttonDisabled]}
       onPress={onResend}
       disabled={loading}
