@@ -1,11 +1,23 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, Alert } from 'react-native';
 import type { ErrorUtils as RNErrorUtils } from 'react-native';
 import Constants from 'expo-constants';
 
 import { reportCrash } from './services/api';
 
 export const SUPPORT_EMAIL = 'marcelo.rui11@gmail.com';
+
+// Deben coincidir con los max_length de CrashReport en el backend (reports/models.py):
+// mandar de más solo hace que el serializer devuelva 400 y el reporte se pierda entero.
+const MAX_MESSAGE_LEN = 2000;
+const MAX_STACK_LEN = 8000;
+
+// Techo dentro de una misma sesión de la app: si algo entra en un loop de errores
+// (ej. un setInterval roto que tira excepción en cada tick, o el propio fallback del
+// ErrorBoundary fallando), esto corta el flood de requests en vez de depender solo
+// del rate-limit por IP del backend.
+const MAX_REPORTS_PER_SESSION = 15;
+let reportsSentThisSession = 0;
 
 // Seteado por AuthContext cuando cambia la sesión, para que los reportes de error
 // lleven a qué usuario le pasó sin depender de pasar props por todo el árbol
@@ -18,12 +30,14 @@ export function setCurrentUsername(username: string | null): void {
 const appVersion = (Constants.expoConfig?.version as string | undefined) ?? 'unknown';
 
 function sendReport(message: string, stack: string, isFatal: boolean, componentStack?: string): void {
+  if (reportsSentThisSession >= MAX_REPORTS_PER_SESSION) return;
+  reportsSentThisSession += 1;
   try {
     reportCrash({
       username: currentUsername ?? '',
-      message,
-      stack,
-      componentStack,
+      message: message.slice(0, MAX_MESSAGE_LEN),
+      stack: stack.slice(0, MAX_STACK_LEN),
+      componentStack: componentStack?.slice(0, MAX_STACK_LEN),
       isFatal,
       platform: Platform.OS,
       appVersion,
@@ -35,7 +49,8 @@ function sendReport(message: string, stack: string, isFatal: boolean, componentS
 
 // Atrapa excepciones de JS no capturadas fuera del árbol de React (handlers de eventos,
 // promises, timers). En producción reemplaza el diálogo nativo de "error fatal" de RN
-// (que deja la app inutilizable) por solo reportar y seguir -- el hilo de JS sigue vivo.
+// (que deja la app inutilizable) por reportar y avisar con un Alert -- el hilo de JS
+// sigue vivo y el usuario se entera sin que le rompamos la pantalla en la que estaba.
 // En desarrollo se deja el comportamiento normal (redbox) para no ocultar bugs.
 export function installGlobalErrorHandler(): void {
   const errorUtils = (global as unknown as { ErrorUtils?: RNErrorUtils }).ErrorUtils;
@@ -47,6 +62,13 @@ export function installGlobalErrorHandler(): void {
     sendReport(err.message, err.stack ?? '', !!isFatal);
     if (__DEV__) {
       previousHandler(error, !!isFatal);
+      return;
+    }
+    if (isFatal) {
+      Alert.alert(
+        'Algo salió mal',
+        'Se produjo un error inesperado y ya fue reportado. Si la app deja de responder, cerrala y volvé a abrirla.',
+      );
     }
   });
 }
