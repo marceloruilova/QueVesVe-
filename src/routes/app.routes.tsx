@@ -11,6 +11,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 import HomeButtom from '../components/HomeButton';
 import { theme } from '../theme/theme';
+import CreatePost from '../pages/CreatePost';
 import Discover from '../pages/Discover';
 import EditProfile from '../pages/EditProfile';
 import Home from '../pages/Home';
@@ -19,6 +20,7 @@ import ConversationScreen from '../pages/Inbox/ConversationScreen';
 import Me from '../pages/Me';
 import Record from '../pages/Record';
 import UploadVideo from '../pages/Record/UploadVideo';
+import UploadMultipleVideos from '../pages/Record/UploadMultipleVideos';
 import FollowList from '../pages/FollowList';
 import UserProfile from '../pages/UserProfile';
 import VideoViewer from '../pages/VideoViewer';
@@ -84,7 +86,7 @@ const AppRoutes: React.FC = () => {
         listeners={({ navigation }) => ({
           tabPress: e => {
             e.preventDefault();
-            navigation.navigate('Record');
+            navigation.navigate('CreatePost');
           },
         })}
         options={{
@@ -129,6 +131,11 @@ const RootStackScreen: React.FC = () => {
         options={{ headerShown: false }}
       />
       <Stack.Screen
+        name="CreatePost"
+        component={CreatePost}
+        options={{ headerShown: false, presentation: 'modal' }}
+      />
+      <Stack.Screen
         name="Record"
         component={Record}
         options={{ headerShown: false, presentation: 'modal' }}
@@ -136,6 +143,11 @@ const RootStackScreen: React.FC = () => {
       <Stack.Screen
         name="UploadVideo"
         component={UploadVideo}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="UploadMultipleVideos"
+        component={UploadMultipleVideos}
         options={{ headerShown: false }}
       />
       <Stack.Screen

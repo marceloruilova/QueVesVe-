@@ -1,7 +1,9 @@
 export type RootStackParamList = {
   Main: undefined;
+  CreatePost: undefined;
   Record: undefined;
   UploadVideo: { videoUri: string };
+  UploadMultipleVideos: { videoUris: string[] };
   UserProfile: { userId: number };
   VideoViewer: { userId: number; startIndex: number };
   EditProfile: undefined;
