@@ -6,15 +6,17 @@ const mockGetUploadQuota = jest.fn();
 
 jest.mock('expo-constants', () => ({
   __esModule: true,
-  default: { appOwnership: null },
+  default: { executionEnvironment: 'standalone' },
+  ExecutionEnvironment: { Bare: 'bare', Standalone: 'standalone', StoreClient: 'storeClient' },
 }));
 
 // Simula un dev client cuyo binario nativo quedó desactualizado respecto al
 // react-native-compressor del package.json: el propio `require()` truena al
 // construir su NativeEventEmitter, igual que describe el comentario en
 // UploadVideo/index.tsx ("doesn't seem to be linked... You are not using
-// Expo Go"). appOwnership !== 'expo' acá, así que la heurística de Expo Go
-// sola no lo cubre -- tiene que ser el try/catch alrededor del require.
+// Expo Go"). executionEnvironment !== 'storeClient' acá, así que la
+// heurística de Expo Go sola no lo cubre -- tiene que ser el try/catch
+// alrededor del require.
 jest.mock('react-native-compressor', () => {
   throw new Error("react-native-compressor doesn't seem to be linked. Make sure: \n\n - You are not using Expo Go");
 });

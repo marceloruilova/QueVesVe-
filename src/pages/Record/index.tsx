@@ -114,6 +114,7 @@ const Record: React.FC = () => {
         facing={facing}
         ref={cameraRef}
         mode="video"
+        videoQuality="1080p"
       />
       <Container>
         <Header>

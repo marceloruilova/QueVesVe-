@@ -14,7 +14,7 @@ import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
 import { AntDesign } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import Constants from 'expo-constants';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 
 import { uploadVideo, getUploadQuota, UploadQuota, UploadRejectedError } from '../../../services/api';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -22,6 +22,14 @@ import { Video as CompressorStubVideo } from '../../../stubs/CompressorStub';
 
 const MAX_DURATION_MS = 180000;
 const MAX_UPLOAD_SIZE_BYTES = 150 * 1024 * 1024;
+// La compresión nativa (react-native-compressor) transcodea en el propio
+// dispositivo, y el pico de memoria que usa escala con la resolución del
+// video de origen, no con su duración -- un clip corto en alta resolución
+// puede pesar igual que uno largo. Por arriba de este umbral, evitamos el
+// transcode local (riesgo de un OOM nativo no capturable desde JS) y
+// subimos el original: el backend igual comprime del lado del servidor
+// cuando client_compressed=false (ver videos/views.py).
+const SKIP_CLIENT_COMPRESSION_ABOVE_BYTES = 60 * 1024 * 1024;
 
 type CompressorVideoModule = {
   compress: (
@@ -42,10 +50,11 @@ type CompressorVideoModule = {
 //
 // La heurística de `isExpoGo` no alcanza sola: en un dev client (ver
 // eas.json) cuyo binario nativo quedó desactualizado respecto al
-// react-native-compressor del package.json, `appOwnership` da distinto de
-// 'expo' pero el módulo nativo real puede no estar linkeado igual, y el
-// require truena igual. El try/catch cubre ese caso también.
-const isExpoGo = Constants.appOwnership === 'expo';
+// react-native-compressor del package.json, `executionEnvironment` da
+// distinto de 'storeClient' pero el módulo nativo real puede no estar
+// linkeado igual, y el require truena igual. El try/catch cubre ese caso
+// también.
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 function loadCompressorVideo(): CompressorVideoModule {
   if (isExpoGo) return CompressorStubVideo;
   try {
@@ -97,25 +106,45 @@ const UploadVideo: React.FC = () => {
   useEffect(() => {
     let cancelled = false;
 
-    CompressorVideo.compress(
-      videoUri,
-      { compressionMethod: 'auto', minimumFileSizeForCompress: 5 },
-      (progress) => {
-        if (!cancelled) setCompressProgress(progress);
-      },
-    )
-      .then((output) => {
+    const skipCompression = () => {
+      if (cancelled) return;
+      setFinalUri(videoUri);
+      setClientCompressed(false);
+      setCompressing(false);
+    };
+
+    FileSystem.getInfoAsync(videoUri)
+      .then((info) => {
         if (cancelled) return;
-        setFinalUri(output);
-        setClientCompressed(output !== videoUri);
+        if (info.exists && typeof info.size === 'number' && info.size > SKIP_CLIENT_COMPRESSION_ABOVE_BYTES) {
+          skipCompression();
+          return;
+        }
+
+        CompressorVideo.compress(
+          videoUri,
+          { compressionMethod: 'auto', minimumFileSizeForCompress: 5 },
+          (progress) => {
+            if (!cancelled) setCompressProgress(progress);
+          },
+        )
+          .then((output) => {
+            if (cancelled) return;
+            setFinalUri(output);
+            setClientCompressed(output !== videoUri);
+          })
+          .catch(() => {
+            if (cancelled) return;
+            setFinalUri(videoUri);
+            setClientCompressed(false);
+          })
+          .finally(() => {
+            if (!cancelled) setCompressing(false);
+          });
       })
       .catch(() => {
-        if (cancelled) return;
-        setFinalUri(videoUri);
-        setClientCompressed(false);
-      })
-      .finally(() => {
-        if (!cancelled) setCompressing(false);
+        // si no podemos ni leer el tamaño crudo, no arriesgamos el transcode nativo
+        skipCompression();
       });
 
     return () => {
@@ -192,15 +221,17 @@ const UploadVideo: React.FC = () => {
       </View>
 
       <View style={styles.previewContainer}>
-        <Video
-          source={{ uri: finalUri }}
-          style={styles.preview}
-          resizeMode={ResizeMode.COVER}
-          isLooping
-          isMuted
-          shouldPlay
-          onPlaybackStatusUpdate={handlePlaybackStatus}
-        />
+        {!compressing && (
+          <Video
+            source={{ uri: finalUri }}
+            style={styles.preview}
+            resizeMode={ResizeMode.COVER}
+            isLooping
+            isMuted
+            shouldPlay
+            onPlaybackStatusUpdate={handlePlaybackStatus}
+          />
+        )}
         {compressing && (
           <View style={styles.compressingOverlay}>
             <ActivityIndicator color="#fff" />

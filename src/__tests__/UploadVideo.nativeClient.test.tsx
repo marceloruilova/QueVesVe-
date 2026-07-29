@@ -7,7 +7,8 @@ const mockCompress = jest.fn();
 
 jest.mock('expo-constants', () => ({
   __esModule: true,
-  default: { appOwnership: null },
+  default: { executionEnvironment: 'standalone' },
+  ExecutionEnvironment: { Bare: 'bare', Standalone: 'standalone', StoreClient: 'storeClient' },
 }));
 
 jest.mock('react-native-compressor', () => ({
@@ -43,9 +44,9 @@ jest.mock('expo-file-system/legacy', () => ({
 import UploadVideo from '../pages/Record/UploadVideo';
 
 // Contraparte de UploadVideo.expoGo.test.tsx: fuera de Expo Go (dev client
-// nativo o build de producción, appOwnership !== 'expo') la compresión real
-// debe seguir llamándose como siempre -- el fallback de Expo Go no debe
-// desactivar la compresión nativa en un build real.
+// nativo o build de producción, executionEnvironment !== 'storeClient') la
+// compresión real debe seguir llamándose como siempre -- el fallback de
+// Expo Go no debe desactivar la compresión nativa en un build real.
 describe('UploadVideo fuera de Expo Go (dev client / producción)', () => {
   beforeEach(() => {
     jest.clearAllMocks();

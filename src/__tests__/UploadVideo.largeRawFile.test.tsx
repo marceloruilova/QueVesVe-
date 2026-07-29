@@ -4,10 +4,11 @@ import { fireEvent, render, waitFor } from '@testing-library/react-native';
 const mockUploadVideo = jest.fn();
 const mockGetUploadQuota = jest.fn();
 const mockCompress = jest.fn();
+const mockGetInfoAsync = jest.fn();
 
 jest.mock('expo-constants', () => ({
   __esModule: true,
-  default: { executionEnvironment: 'storeClient' },
+  default: { executionEnvironment: 'standalone' },
   ExecutionEnvironment: { Bare: 'bare', Standalone: 'standalone', StoreClient: 'storeClient' },
 }));
 
@@ -38,26 +39,30 @@ jest.mock('expo-av', () => ({
 }));
 
 jest.mock('expo-file-system/legacy', () => ({
-  getInfoAsync: jest.fn().mockResolvedValue({ exists: true, size: 1000 }),
+  getInfoAsync: (...args: unknown[]) => mockGetInfoAsync(...args),
 }));
 
 import UploadVideo from '../pages/Record/UploadVideo';
 
-// Regresión: react-native-compressor no está linkeado en Expo Go y
-// CompressorVideo.compress() tira "doesn't seem to be linked ... You are not
-// using Expo Go", lo que tumbaba esta pantalla apenas se abría desde Expo Go.
-// En Expo Go debe saltarse la compresión nativa y usar el video sin comprimir.
-describe('UploadVideo en Expo Go (Constants.executionEnvironment === "storeClient")', () => {
+// Regresión: el pico de memoria de la compresión nativa (react-native-compressor)
+// escala con la resolución de origen, no con la duración -- un clip grabado en alta
+// resolución puede agotar memoria nativa (no capturable desde JS, mata la app entera)
+// aunque sea corto. Por eso, para un archivo crudo por arriba del umbral de
+// seguridad, el transcode local se salta directamente y se sube el original sin
+// tocar react-native-compressor -- el servidor comprime del lado suyo.
+describe('UploadVideo con un archivo crudo pesado', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetUploadQuota.mockResolvedValue({
       used_bytes: 0,
-      limit_bytes: 1_000_000,
-      remaining_bytes: 999_000,
+      limit_bytes: 1_000_000_000,
+      remaining_bytes: 999_000_000,
     });
   });
 
-  it('no llama al compresor nativo y sube el video sin comprimir', async () => {
+  it('salta la compresión nativa y sube el original cuando el archivo crudo supera el umbral', async () => {
+    mockGetInfoAsync.mockResolvedValue({ exists: true, size: 90 * 1024 * 1024 });
+
     const { getByText } = await render(<UploadVideo />);
 
     await waitFor(() => expect(getByText('Publicar')).toBeTruthy());
@@ -74,5 +79,15 @@ describe('UploadVideo en Expo Go (Constants.executionEnvironment === "storeClien
       'token-123',
       false,
     );
+  });
+
+  it('comprime normalmente cuando el archivo crudo está por debajo del umbral', async () => {
+    mockGetInfoAsync.mockResolvedValue({ exists: true, size: 10 * 1024 * 1024 });
+    mockCompress.mockResolvedValue('file:///tmp/compressed.mp4');
+
+    const { getByText } = await render(<UploadVideo />);
+
+    await waitFor(() => expect(mockCompress).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(getByText('Publicar')).toBeTruthy());
   });
 });
