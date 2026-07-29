@@ -35,15 +35,27 @@ type CompressorVideoModule = {
 // nativo): construye un NativeEventEmitter al nivel del módulo, así que basta
 // con hacer `import` (ni siquiera llamar a .compress()) para que tire
 // "doesn't seem to be linked... You are not using Expo Go" y tumbe la
-// pantalla. Por eso el require es condicional -- en Expo Go ni se carga el
-// paquete real, se usa el mismo stub que ya existe para web. El backend
-// igual comprime del lado del servidor cuando client_compressed=false
-// (ver videos/views.py).
+// pantalla, sin que ningún try/catch del componente llegue a protegerlo. Por
+// eso el require es condicional -- en Expo Go ni se carga el paquete real, se
+// usa el mismo stub que ya existe para web. El backend igual comprime del
+// lado del servidor cuando client_compressed=false (ver videos/views.py).
+//
+// La heurística de `isExpoGo` no alcanza sola: en un dev client (ver
+// eas.json) cuyo binario nativo quedó desactualizado respecto al
+// react-native-compressor del package.json, `appOwnership` da distinto de
+// 'expo' pero el módulo nativo real puede no estar linkeado igual, y el
+// require truena igual. El try/catch cubre ese caso también.
 const isExpoGo = Constants.appOwnership === 'expo';
-// eslint-disable-next-line global-require, @typescript-eslint/no-var-requires
-const CompressorVideo: CompressorVideoModule = isExpoGo
-  ? CompressorStubVideo
-  : require('react-native-compressor').Video;
+function loadCompressorVideo(): CompressorVideoModule {
+  if (isExpoGo) return CompressorStubVideo;
+  try {
+    // eslint-disable-next-line global-require, @typescript-eslint/no-var-requires
+    return require('react-native-compressor').Video;
+  } catch {
+    return CompressorStubVideo;
+  }
+}
+const CompressorVideo: CompressorVideoModule = loadCompressorVideo();
 
 type UploadVideoRouteParams = {
   UploadVideo: { videoUri: string };

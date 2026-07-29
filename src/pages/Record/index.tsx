@@ -108,7 +108,13 @@ const Record: React.FC = () => {
   }
 
   return (
-    <CameraView style={{ flex: 1 }} facing={facing} ref={cameraRef} mode="video">
+    <View style={{ flex: 1 }}>
+      <CameraView
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+        facing={facing}
+        ref={cameraRef}
+        mode="video"
+      />
       <Container>
         <Header>
           <Button
@@ -146,7 +152,7 @@ const Record: React.FC = () => {
           </View>
         )}
       </Container>
-    </CameraView>
+    </View>
   );
 };
 
