@@ -304,6 +304,34 @@ export async function uploadVideo(
   }
 }
 
+export interface CrashReportPayload {
+  username?: string;
+  message: string;
+  stack?: string;
+  componentStack?: string;
+  isFatal?: boolean;
+  platform?: string;
+  appVersion?: string;
+}
+
+// Fire-and-forget a propósito: este es el mecanismo que avisa de errores inesperados,
+// así que no puede tener su propio manejo de errores que bloquee o rompa nada.
+export function reportCrash(payload: CrashReportPayload): void {
+  fetch(`${API_BASE_URL}/reports/crash/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      username: payload.username,
+      message: payload.message,
+      stack: payload.stack,
+      component_stack: payload.componentStack,
+      is_fatal: payload.isFatal,
+      platform: payload.platform,
+      app_version: payload.appVersion,
+    }),
+  }).catch(() => {});
+}
+
 export async function updateVideo(
   videoId: number,
   data: { description?: string; tags?: string; music?: string },

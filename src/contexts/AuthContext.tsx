@@ -3,6 +3,7 @@ import { AppState, AppStateStatus } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { loginUser, registerUser, getUserProfile, decodeJWT, socialAuth, refreshAccessToken, User } from '../services/api';
+import { setCurrentUsername } from '../errorReporting';
 
 interface AuthContextType {
   user: User | null;
@@ -120,6 +121,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const profile = await getUserProfile(Number(userId), validToken);
         setAccessToken(validToken);
         setUser(profile);
+        setCurrentUsername(profile.username);
       } catch {
         await clearStoredSession();
       } finally {
@@ -139,6 +141,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     refreshTokenRef.current = data.refresh;
     setAccessToken(data.access);
     setUser(profile);
+    setCurrentUsername(profile.username);
     scheduleRefresh(data.access);
     await storeSession(data.access, data.refresh, String(userId));
   };
@@ -148,6 +151,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     refreshTokenRef.current = data.refresh;
     setAccessToken(data.access);
     setUser(data.user);
+    setCurrentUsername(data.user.username);
     scheduleRefresh(data.access);
     await storeSession(data.access, data.refresh, String(data.user.id));
   };
@@ -157,6 +161,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     refreshTokenRef.current = data.refresh;
     setAccessToken(data.access);
     setUser(data.user);
+    setCurrentUsername(data.user.username);
     scheduleRefresh(data.access);
     await storeSession(data.access, data.refresh, String(data.user.id));
   };
@@ -166,6 +171,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     refreshTokenRef.current = null;
     setUser(null);
     setAccessToken(null);
+    setCurrentUsername(null);
     await clearStoredSession();
   };
 
