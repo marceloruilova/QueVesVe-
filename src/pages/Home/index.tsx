@@ -136,7 +136,11 @@ const Home: React.FC = () => {
         >
           {activeFeed.map((item, index) => (
             <View key={item.id}>
-              <Feed item={item} play={isFocused && index === active} />
+              <Feed
+                item={item}
+                play={isFocused && index === active}
+                mountVideo={Math.abs(index - active) <= 1}
+              />
             </View>
           ))}
         </PagerView>

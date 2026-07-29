@@ -44,10 +44,11 @@ interface Item {
 
 interface Props {
   play: boolean;
+  mountVideo: boolean;
   item: Item;
 }
 
-const Feed: React.FC<Props> = ({ play, item }) => {
+const Feed: React.FC<Props> = ({ play, mountVideo, item }) => {
   const { accessToken, user } = useAuth();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [liked, setLiked] = useState(item.liked_by_user);
@@ -133,7 +134,7 @@ const Feed: React.FC<Props> = ({ play, item }) => {
         }}
       />
       <Container>
-        {item.uri ? (
+        {item.uri && mountVideo ? (
           <Pressable
             onPress={handleTogglePause}
             style={{ width: '100%', height: '100%' }}

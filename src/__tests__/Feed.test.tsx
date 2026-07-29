@@ -94,14 +94,14 @@ describe('Feed — pausa/reanudación del video', () => {
   // apunta directo al testID y no reproduce ese problema de stacking/hit-testing,
   // por eso se verifica explícitamente que los overlays tengan pointerEvents="none".
   it('los overlays decorativos (gradientes) no bloquean el toque sobre el video', async () => {
-    const { getByTestId } = await render(<Feed item={baseItem} play />);
+    const { getByTestId } = await render(<Feed item={baseItem} play mountVideo />);
 
     expect(getByTestId('feed-gradient-top').props.pointerEvents).toBe('none');
     expect(getByTestId('feed-gradient-bottom').props.pointerEvents).toBe('none');
   });
 
   it('reproduce el video cuando play=true y lo pausa al tocarlo (tap-to-pause)', async () => {
-    const { getByTestId } = await render(<Feed item={baseItem} play />);
+    const { getByTestId } = await render(<Feed item={baseItem} play mountVideo />);
 
     expect(getByTestId('feed-video').props.shouldPlay).toBe(true);
 
@@ -110,7 +110,7 @@ describe('Feed — pausa/reanudación del video', () => {
   });
 
   it('vuelve a reproducir el video al tocarlo de nuevo', async () => {
-    const { getByTestId } = await render(<Feed item={baseItem} play />);
+    const { getByTestId } = await render(<Feed item={baseItem} play mountVideo />);
 
     await fireEvent.press(getByTestId('feed-video-pressable'));
     expect(getByTestId('feed-video').props.shouldPlay).toBe(false);
@@ -120,7 +120,7 @@ describe('Feed — pausa/reanudación del video', () => {
   });
 
   it('nunca reproduce el video cuando play=false, sin importar el pausado manual', async () => {
-    const { getByTestId } = await render(<Feed item={baseItem} play={false} />);
+    const { getByTestId } = await render(<Feed item={baseItem} play={false} mountVideo />);
 
     expect(getByTestId('feed-video').props.shouldPlay).toBe(false);
 
@@ -129,13 +129,13 @@ describe('Feed — pausa/reanudación del video', () => {
   });
 
   it('al dejar de ser el video activo (scroll/cambio de tab) y volver a serlo, arranca reproduciendo', async () => {
-    const { getByTestId, rerender } = await render(<Feed item={baseItem} play />);
+    const { getByTestId, rerender } = await render(<Feed item={baseItem} play mountVideo />);
 
     await fireEvent.press(getByTestId('feed-video-pressable'));
     expect(getByTestId('feed-video').props.shouldPlay).toBe(false);
 
-    await rerender(<Feed item={baseItem} play={false} />);
-    await rerender(<Feed item={baseItem} play />);
+    await rerender(<Feed item={baseItem} play={false} mountVideo />);
+    await rerender(<Feed item={baseItem} play mountVideo />);
 
     expect(getByTestId('feed-video').props.shouldPlay).toBe(true);
   });
@@ -154,7 +154,7 @@ describe('Feed — edición de videos propios', () => {
   it('no muestra la acción de editar si el video no es del usuario logueado', async () => {
     mockUseAuth.mockReturnValue({ accessToken: 'token-123', user: { id: 999 } });
 
-    const { queryByTestId } = await render(<Feed item={editableItem} play={false} />);
+    const { queryByTestId } = await render(<Feed item={editableItem} play={false} mountVideo />);
 
     expect(queryByTestId('feed-edit-action')).toBeNull();
   });
@@ -162,7 +162,7 @@ describe('Feed — edición de videos propios', () => {
   it('muestra la acción de editar cuando el video es del usuario logueado', async () => {
     mockUseAuth.mockReturnValue({ accessToken: 'token-123', user: { id: 10 } });
 
-    const { getByTestId } = await render(<Feed item={editableItem} play={false} />);
+    const { getByTestId } = await render(<Feed item={editableItem} play={false} mountVideo />);
 
     expect(getByTestId('feed-edit-action')).toBeTruthy();
   });
@@ -175,7 +175,7 @@ describe('Feed — edición de videos propios', () => {
       music: 'Nueva canción',
     });
 
-    const { getByTestId, getByText } = await render(<Feed item={editableItem} play={false} />);
+    const { getByTestId, getByText } = await render(<Feed item={editableItem} play={false} mountVideo />);
 
     await fireEvent.press(getByTestId('feed-edit-action'));
     expect(getByTestId('edit-video-description')).toBeTruthy();
