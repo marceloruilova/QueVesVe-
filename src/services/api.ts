@@ -173,13 +173,21 @@ export interface FeedItem {
   music: string;
   likes: number;
   comments: number;
+  shares: number;
+  saves: number;
   liked_by_user: boolean;
+  saved_by_user: boolean;
   uri: string | null;
   thumbnail_url: string | null;
   views_count: number | null;
   category: string;
   source_type: 'ugc' | 'pexels' | 'pixabay';
   author_name: string;
+  // Solo vienen completos cuando el usuario autenticado es el dueño del video.
+  priority_score: number | null;
+  priority_level: string | null;
+  priority_factors: string[] | null;
+  priority_recommendations: string[] | null;
 }
 
 export interface UserSearchItem {
@@ -584,6 +592,85 @@ export async function recordView(videoId: number, accessToken: string): Promise<
   } catch {
     // silently ignore view tracking errors
   }
+}
+
+export async function toggleSave(
+  videoId: number,
+  saved: boolean,
+  accessToken: string,
+): Promise<{ saves: number; saved_by_user: boolean }> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/videos/${videoId}/save/`, {
+      method: saved ? 'DELETE' : 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  if (!res.ok) throw new Error('Failed to toggle save');
+  try {
+    return await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
+}
+
+export async function recordShare(videoId: number, accessToken: string): Promise<void> {
+  try {
+    await fetch(`${API_BASE_URL}/videos/${videoId}/share/`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    // silently ignore share tracking errors
+  }
+}
+
+export async function recordWatch(
+  videoId: number,
+  watchedSeconds: number,
+  durationSeconds: number | null,
+  accessToken: string,
+): Promise<void> {
+  try {
+    await fetch(`${API_BASE_URL}/videos/${videoId}/watch/`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ watched_seconds: watchedSeconds, duration_seconds: durationSeconds }),
+    });
+  } catch {
+    // silently ignore watch-time tracking errors
+  }
+}
+
+export async function markCategoryNotInterested(
+  category: string,
+  accessToken: string,
+): Promise<void> {
+  await fetch(`${API_BASE_URL}/videos/category/${encodeURIComponent(category)}/not-interested/`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
+
+export async function hideCreator(userId: number, accessToken: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/users/${userId}/hide/`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) throw new Error('No se pudo ocultar a este creador.');
+}
+
+export async function blockUser(userId: number, accessToken: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/users/${userId}/block/`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) throw new Error('No se pudo bloquear a este creador.');
 }
 
 // ─── Direct Messages ────────────────────────────────────────────────────────

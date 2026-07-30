@@ -23,6 +23,10 @@ interface Props {
   initialDescription: string;
   initialTags: string;
   initialMusic: string;
+  priorityLevel?: string | null;
+  priorityScore?: number | null;
+  priorityFactors?: string[] | null;
+  priorityRecommendations?: string[] | null;
   onClose: () => void;
   onSaved: (data: { description: string; tags: string; music: string }) => void;
 }
@@ -33,6 +37,10 @@ const EditVideoModal: React.FC<Props> = ({
   initialDescription,
   initialTags,
   initialMusic,
+  priorityLevel,
+  priorityScore,
+  priorityFactors,
+  priorityRecommendations,
   onClose,
   onSaved,
 }) => {
@@ -83,6 +91,28 @@ const EditVideoModal: React.FC<Props> = ({
           </View>
 
           <View style={styles.form}>
+            {priorityLevel && (
+              <View style={styles.priorityBox}>
+                <Text style={styles.priorityTitle}>
+                  Prioridad en el feed: {priorityLevel}
+                  {typeof priorityScore === 'number' ? ` (${priorityScore}/100)` : ''}
+                </Text>
+                {!!priorityFactors?.length && (
+                  <Text style={styles.priorityText}>
+                    Lo que más pesó: {priorityFactors.join(', ')}
+                  </Text>
+                )}
+                {!!priorityRecommendations?.length && (
+                  <>
+                    <Text style={styles.priorityLabel}>Para mejorar tu visibilidad:</Text>
+                    {priorityRecommendations.map(tip => (
+                      <Text key={tip} style={styles.priorityText}>• {tip}</Text>
+                    ))}
+                  </>
+                )}
+              </View>
+            )}
+
             <Text style={styles.label}>Descripción</Text>
             <TextInput
               style={styles.input}
@@ -162,6 +192,30 @@ const styles = StyleSheet.create({
   },
   form: {
     padding: 16,
+  },
+  priorityBox: {
+    backgroundColor: '#fff8ee',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+  },
+  priorityTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 4,
+  },
+  priorityLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#555',
+    marginTop: 6,
+    marginBottom: 2,
+  },
+  priorityText: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
   },
   label: {
     color: '#666',

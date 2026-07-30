@@ -9,11 +9,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
 
 import { useAuth } from '../../../contexts/AuthContext';
-import { toggleLike, recordView } from '../../../services/api';
+import { toggleLike, toggleSave, recordView, recordShare, recordWatch } from '../../../services/api';
 import { RootStackParamList } from '../../../types/navigation';
 import CommentsModal from './CommentsModal';
 import EditVideoModal from './EditVideoModal';
 import ReportModal from '../../../components/ReportModal';
+import MoreOptionsModal from '../../../components/MoreOptionsModal';
 import musicFly from '../../../assets/lottie-animations/music-fly.json';
 
 import {
@@ -39,7 +40,14 @@ interface Item {
   likes: number;
   comments: number;
   liked_by_user: boolean;
+  saves?: number;
+  saved_by_user?: boolean;
+  category?: string;
   uri: string | null;
+  priority_level?: string | null;
+  priority_score?: number | null;
+  priority_factors?: string[] | null;
+  priority_recommendations?: string[] | null;
 }
 
 interface Props {
@@ -53,9 +61,12 @@ const Feed: React.FC<Props> = ({ play, mountVideo, item }) => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [liked, setLiked] = useState(item.liked_by_user);
   const [likesCount, setLikesCount] = useState(item.likes);
+  const [saved, setSaved] = useState(!!item.saved_by_user);
+  const [savesCount, setSavesCount] = useState(item.saves ?? 0);
   const [showComments, setShowComments] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [paused, setPaused] = useState(false);
   const [description, setDescription] = useState(item.description ?? '');
   const [tags, setTags] = useState(item.tags);
@@ -65,6 +76,41 @@ const Feed: React.FC<Props> = ({ play, mountVideo, item }) => {
 
   const spinValue = useRef(new Animated.Value(0)).current;
 
+  // Tracking de watch-time: posición máxima alcanzada (para completion rate /
+  // detectar swipe rápido) y cantidad de loops (isLooping=true -> cada loop
+  // completo cuenta como una reproducción repetida, señal de calidad).
+  const maxPositionMillisRef = useRef(0);
+  const lastPositionMillisRef = useRef(0);
+  const loopCountRef = useRef(0);
+  const durationMillisRef = useRef<number | null>(null);
+
+  const flushWatch = () => {
+    if (!accessToken || maxPositionMillisRef.current <= 0) return;
+    const durationSeconds = durationMillisRef.current ? durationMillisRef.current / 1000 : null;
+    const watchedSeconds =
+      maxPositionMillisRef.current / 1000 + loopCountRef.current * (durationSeconds ?? 0);
+    recordWatch(item.id, watchedSeconds, durationSeconds, accessToken);
+    maxPositionMillisRef.current = 0;
+    lastPositionMillisRef.current = 0;
+    loopCountRef.current = 0;
+  };
+
+  const handlePlaybackStatusUpdate = (playbackStatus: { isLoaded: boolean; positionMillis?: number; durationMillis?: number }) => {
+    if (!playbackStatus.isLoaded || playbackStatus.positionMillis === undefined) return;
+    if (playbackStatus.durationMillis) {
+      durationMillisRef.current = playbackStatus.durationMillis;
+    }
+    const position = playbackStatus.positionMillis;
+    const duration = durationMillisRef.current ?? Infinity;
+    // El video hace loop (isLooping): si la posición cae bruscamente después
+    // de estar cerca del final, fue un loop completo, no un seek hacia atrás.
+    if (position < lastPositionMillisRef.current - 1000 && lastPositionMillisRef.current > duration * 0.8) {
+      loopCountRef.current += 1;
+    }
+    lastPositionMillisRef.current = position;
+    maxPositionMillisRef.current = Math.max(maxPositionMillisRef.current, position);
+  };
+
   useEffect(() => {
     if (play && accessToken) {
       recordView(item.id, accessToken);
@@ -72,11 +118,16 @@ const Feed: React.FC<Props> = ({ play, mountVideo, item }) => {
   }, [play]);
 
   // Al dejar de ser el video activo (scroll, cambio de tab, etc.) se resetea
-  // el pausado manual para que la próxima vez que sea activo arranque reproduciendo.
+  // el pausado manual para que la próxima vez que sea activo arranque reproduciendo,
+  // y se envía la sesión de reproducción acumulada hasta acá.
   useEffect(() => {
     if (!play) {
       setPaused(false);
+      flushWatch();
     }
+    return () => {
+      if (play) flushWatch();
+    };
   }, [play]);
 
   const isPlaying = play && !paused;
@@ -101,7 +152,10 @@ const Feed: React.FC<Props> = ({ play, mountVideo, item }) => {
   });
 
   const handleShare = async () => {
-    await Share.share({ message: `Mirá este video en QueVesVe!& https://quevesve.app` });
+    const result = await Share.share({ message: `Mirá este video en QueVesVe!& https://quevesve.app` });
+    if (result.action === Share.sharedAction && accessToken) {
+      recordShare(item.id, accessToken);
+    }
   };
 
   const handleLike = async () => {
@@ -116,6 +170,21 @@ const Feed: React.FC<Props> = ({ play, mountVideo, item }) => {
     } catch {
       setLiked(liked);
       setLikesCount(likesCount);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!accessToken) return;
+    const nextSaved = !saved;
+    setSaved(nextSaved);
+    setSavesCount(prev => prev + (nextSaved ? 1 : -1));
+    try {
+      const res = await toggleSave(item.id, saved, accessToken);
+      setSavesCount(res.saves);
+      setSaved(res.saved_by_user);
+    } catch {
+      setSaved(saved);
+      setSavesCount(savesCount);
     }
   };
 
@@ -148,6 +217,7 @@ const Feed: React.FC<Props> = ({ play, mountVideo, item }) => {
               resizeMode={ResizeMode.COVER}
               shouldPlay={isPlaying}
               isLooping
+              onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
               style={{
                 width: '100%',
                 height: '100%',
@@ -190,6 +260,14 @@ const Feed: React.FC<Props> = ({ play, mountVideo, item }) => {
           />
           <TextAction>{item.comments}</TextAction>
         </BoxAction>
+        <BoxAction onPress={handleSave}>
+          <FontAwesome
+            name={saved ? 'bookmark' : 'bookmark-o'}
+            size={32}
+            color={saved ? '#F5A623' : '#fff'}
+          />
+          <TextAction>{savesCount}</TextAction>
+        </BoxAction>
         <BoxAction onPress={handleShare}>
           <FontAwesome
             name="whatsapp"
@@ -206,6 +284,16 @@ const Feed: React.FC<Props> = ({ play, mountVideo, item }) => {
           />
           <TextAction>Reportar</TextAction>
         </BoxAction>
+        {!isOwner && (
+          <BoxAction onPress={() => setShowMoreOptions(true)} testID="feed-more-options-action">
+            <FontAwesome
+              name="ellipsis-h"
+              size={30}
+              color="#fff"
+            />
+            <TextAction>Más</TextAction>
+          </BoxAction>
+        )}
         {isOwner && (
           <BoxAction onPress={() => setShowEdit(true)} testID="feed-edit-action">
             <FontAwesome
@@ -274,6 +362,14 @@ const Feed: React.FC<Props> = ({ play, mountVideo, item }) => {
         visible={showReport}
         onClose={() => setShowReport(false)}
       />
+      <MoreOptionsModal
+        videoId={item.id}
+        userId={item.user_id}
+        username={item.username}
+        category={item.category ?? ''}
+        visible={showMoreOptions}
+        onClose={() => setShowMoreOptions(false)}
+      />
       {isOwner && (
         <EditVideoModal
           videoId={item.id}
@@ -281,6 +377,10 @@ const Feed: React.FC<Props> = ({ play, mountVideo, item }) => {
           initialDescription={description}
           initialTags={tags}
           initialMusic={music}
+          priorityLevel={item.priority_level}
+          priorityScore={item.priority_score}
+          priorityFactors={item.priority_factors}
+          priorityRecommendations={item.priority_recommendations}
           onClose={() => setShowEdit(false)}
           onSaved={data => {
             setDescription(data.description);
