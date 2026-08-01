@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, PanResponder, Text as RNText, ScrollView, TouchableOpacity,
   StyleSheet,
@@ -38,15 +38,47 @@ const Home: React.FC = () => {
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [uiVisible, setUiVisible] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasNext, setHasNext] = useState(false);
+  const loadingMoreRef = useRef(false);
 
   useFocusEffect(
     useCallback(() => {
       if (!accessToken) return;
-      getFeed(accessToken, selectedCategory ?? undefined)
-        .then(setFeedItems)
-        .catch(() => setFeedItems([]));
+      setPage(1);
+      getFeed(accessToken, selectedCategory ?? undefined, 1)
+        .then(data => {
+          setFeedItems(data.results);
+          setHasNext(!!data.next);
+        })
+        .catch(() => {
+          setFeedItems([]);
+          setHasNext(false);
+        });
     }, [accessToken, selectedCategory]),
   );
+
+  // Scroll infinito: el backend nunca "termina" el feed "Para vos" (recicla
+  // contenido en vez de cortar en seco, ver videos/views.py), así que acá
+  // alcanza con pedir la próxima página cuando el usuario se acerca al final
+  // de lo ya cargado en vez de mostrar una pantalla vacía.
+  useEffect(() => {
+    if (!accessToken || !hasNext || loadingMoreRef.current) return;
+    if (feedItems.length === 0 || feedItems.length - active > 3) return;
+
+    loadingMoreRef.current = true;
+    const nextPage = page + 1;
+    getFeed(accessToken, selectedCategory ?? undefined, nextPage)
+      .then(data => {
+        setFeedItems(prev => [...prev, ...data.results]);
+        setHasNext(!!data.next);
+        setPage(nextPage);
+      })
+      .catch(() => {})
+      .finally(() => {
+        loadingMoreRef.current = false;
+      });
+  }, [accessToken, active, feedItems.length, hasNext, page, selectedCategory]);
 
   const handleCategorySelect = (key: string | null) => {
     setSelectedCategory(key);
@@ -135,7 +167,10 @@ const Home: React.FC = () => {
           initialPage={0}
         >
           {activeFeed.map((item, index) => (
-            <View key={item.id}>
+            // El feed "Para vos" recicla contenido cuando se acaba lo fresco
+            // (ver videos/views.py), así que el mismo item.id puede repetirse
+            // en la lista -- la key tiene que incluir la posición.
+            <View key={`${item.id}-${index}`}>
               <Feed
                 item={item}
                 play={isFocused && index === active}

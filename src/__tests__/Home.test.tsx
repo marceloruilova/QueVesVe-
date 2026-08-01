@@ -72,7 +72,7 @@ const feedItems = [
 describe('Home — pausa el video activo al perder el foco (cambio de tab)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetFeed.mockResolvedValue(feedItems);
+    mockGetFeed.mockResolvedValue({ results: feedItems, next: null, count: feedItems.length });
   });
 
   it('reproduce el video activo mientras la screen Home está enfocada', async () => {
@@ -100,7 +100,7 @@ describe('Home — pausa el video activo al perder el foco (cambio de tab)', () 
 describe('Home — botón para ocultar/mostrar tabs y categorías', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetFeed.mockResolvedValue(feedItems);
+    mockGetFeed.mockResolvedValue({ results: feedItems, next: null, count: feedItems.length });
     mockIsFocused.mockReturnValue(true);
   });
 

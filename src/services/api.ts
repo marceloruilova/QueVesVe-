@@ -205,11 +205,23 @@ export interface CommentItem {
   created_at: string;
 }
 
-export async function getFeed(accessToken: string, category?: string): Promise<FeedItem[]> {
+export interface FeedPage {
+  results: FeedItem[];
+  next: string | null;
+  count: number;
+}
+
+// El feed "Para Ti" del backend nunca "termina" (ver videos/views.py): pasada
+// la última página recicla desde la primera en vez de devolver una página
+// vacía, así que acá se expone `next`/`count` para que Home pueda pedir más
+// páginas a medida que el usuario se acerca al final de lo ya cargado.
+export async function getFeed(accessToken: string, category?: string, page?: number): Promise<FeedPage> {
   let res: Response;
-  const url = category
-    ? `${API_BASE_URL}/videos/?category=${encodeURIComponent(category)}`
-    : `${API_BASE_URL}/videos/`;
+  const params = new URLSearchParams();
+  if (category) params.set('category', category);
+  if (page && page > 1) params.set('page', String(page));
+  const query = params.toString();
+  const url = `${API_BASE_URL}/videos/${query ? `?${query}` : ''}`;
   try {
     res = await fetch(url, {
       headers: {
@@ -223,7 +235,7 @@ export async function getFeed(accessToken: string, category?: string): Promise<F
   if (!res.ok) throw new Error('Failed to fetch feed');
   try {
     const data = await res.json();
-    return data.results;
+    return { results: data.results, next: data.next ?? null, count: data.count ?? data.results.length };
   } catch {
     throw new Error('Error del servidor. Intentá de nuevo.');
   }
