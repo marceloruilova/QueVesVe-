@@ -472,10 +472,34 @@ export async function updateUserProfile(
   return (responseData.data ?? responseData) as User;
 }
 
+export async function requestSenescytCaptcha(
+  userId: number,
+  accessToken: string,
+): Promise<{ challengeToken: string; captchaImageBase64: string }> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/users/${userId}/senescyt-captcha/`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  let data: { challenge_token?: string; captcha_image_base64?: string; error?: string; [key: string]: unknown };
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
+  if (!res.ok) throw new Error(data.error ?? 'No se pudo obtener el código de verificación');
+  return { challengeToken: data.challenge_token as string, captchaImageBase64: data.captcha_image_base64 as string };
+}
+
 export async function verifySenescyt(
   userId: number,
   cedula: string,
-  numeroRegistroSenescyt: string,
+  captcha: string,
+  challengeToken: string,
   accessToken: string,
 ): Promise<{ detail: string; verified_name: string; title: string; institution: string }> {
   let res: Response;
@@ -486,7 +510,7 @@ export async function verifySenescyt(
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ cedula, numeroRegistroSenescyt }),
+      body: JSON.stringify({ cedula, captcha, challenge_token: challengeToken }),
     });
   } catch {
     throw new Error('No se pudo conectar con el servidor.');

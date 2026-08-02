@@ -20,7 +20,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 
 import avatar from '../../assets/avatar.png';
 import { useAuth } from '../../contexts/AuthContext';
-import { updateUserProfile, verifySenescyt } from '../../services/api';
+import { requestSenescytCaptcha, updateUserProfile, verifySenescyt } from '../../services/api';
 import { RootStackParamList } from '../../types/navigation';
 
 type NavProp = StackNavigationProp<RootStackParamList>;
@@ -36,12 +36,15 @@ const EditProfile: React.FC = () => {
   const [professionalInstitution, setProfessionalInstitution] = useState(
     user?.professional_institution ?? '',
   );
-  const [senescytNumber, setSenescytNumber] = useState(user?.senescyt_number ?? '');
   const [cedula, setCedula] = useState('');
   const [localImageUri, setLocalImageUri] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
+  const [requestingCaptcha, setRequestingCaptcha] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaImage, setCaptchaImage] = useState<string | null>(null);
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [verified, setVerified] = useState(user?.senescyt_verified ?? false);
   const [verifiedName, setVerifiedName] = useState(user?.senescyt_verified_name ?? '');
   const [showProfessional, setShowProfessional] = useState(
@@ -65,15 +68,35 @@ const EditProfile: React.FC = () => {
     }
   };
 
-  const handleVerify = async () => {
+  const handleRequestCaptcha = async () => {
     if (!user || !accessToken) return;
-    if (!cedula.trim() || !senescytNumber.trim()) {
-      Alert.alert('Faltan datos', 'Ingresá tu cédula y número de registro SENESCYT.');
+    if (!cedula.trim()) {
+      Alert.alert('Faltan datos', 'Ingresá tu cédula para pedir el código de verificación.');
+      return;
+    }
+    setRequestingCaptcha(true);
+    try {
+      const res = await requestSenescytCaptcha(user.id, accessToken);
+      setCaptchaToken(res.challengeToken);
+      setCaptchaImage(res.captchaImageBase64);
+      setCaptchaAnswer('');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al pedir el código';
+      Alert.alert('No se pudo obtener el código', msg);
+    } finally {
+      setRequestingCaptcha(false);
+    }
+  };
+
+  const handleConfirmVerify = async () => {
+    if (!user || !accessToken || !captchaToken) return;
+    if (!captchaAnswer.trim()) {
+      Alert.alert('Faltan datos', 'Escribí el código que aparece en la imagen.');
       return;
     }
     setVerifying(true);
     try {
-      const res = await verifySenescyt(user.id, cedula, senescytNumber, accessToken);
+      const res = await verifySenescyt(user.id, cedula, captchaAnswer, captchaToken, accessToken);
       setVerified(true);
       setVerifiedName(res.verified_name);
       if (res.title && !professionalTitle) setProfessionalTitle(res.title);
@@ -82,6 +105,10 @@ const EditProfile: React.FC = () => {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al verificar';
       Alert.alert('Verificación fallida', msg);
+      // El backend consume el challenge_token en éxito o error (de un solo uso) — hay que pedir un código nuevo.
+      setCaptchaToken(null);
+      setCaptchaImage(null);
+      setCaptchaAnswer('');
     } finally {
       setVerifying(false);
     }
@@ -100,7 +127,6 @@ const EditProfile: React.FC = () => {
         if (birthDate.trim()) form.append('birth_date', birthDate.trim());
         form.append('professional_title', professionalTitle);
         form.append('professional_institution', professionalInstitution);
-        form.append('senescyt_number', senescytNumber);
         form.append('profile_picture', {
           uri: localImageUri,
           name: 'avatar.jpg',
@@ -113,7 +139,6 @@ const EditProfile: React.FC = () => {
           bio,
           professional_title: professionalTitle,
           professional_institution: professionalInstitution,
-          senescyt_number: senescytNumber,
         };
         if (birthDate.trim()) jsonBody.birth_date = birthDate.trim();
         body = jsonBody;
@@ -257,16 +282,8 @@ const EditProfile: React.FC = () => {
             ) : (
               <>
                 <Text style={styles.senescytHint}>
-                  Verificá tu título profesional con tu número de registro SENESCYT Ecuador.
+                  Verificá tu título profesional con tu cédula registrada en SENESCYT Ecuador.
                 </Text>
-                <Text style={styles.fieldLabel}>N° Registro SENESCYT</Text>
-                <TextInput
-                  style={styles.input}
-                  value={senescytNumber}
-                  onChangeText={setSenescytNumber}
-                  placeholder="Ej: 1031-03-358860"
-                  autoCapitalize="none"
-                />
                 <Text style={styles.fieldLabel}>Cédula (solo para verificación)</Text>
                 <TextInput
                   style={styles.input}
@@ -277,17 +294,45 @@ const EditProfile: React.FC = () => {
                   maxLength={10}
                   secureTextEntry
                 />
-                <TouchableOpacity
-                  style={styles.verifyButton}
-                  onPress={handleVerify}
-                  disabled={verifying}
-                >
-                  {verifying ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <Text style={styles.verifyButtonText}>Verificar título</Text>
-                  )}
-                </TouchableOpacity>
+                {captchaImage ? (
+                  <>
+                    <Image
+                      source={{ uri: `data:image/jpeg;base64,${captchaImage}` }}
+                      style={styles.captchaImage}
+                    />
+                    <Text style={styles.fieldLabel}>Código de la imagen</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={captchaAnswer}
+                      onChangeText={setCaptchaAnswer}
+                      placeholder="Escribí el código"
+                      autoCapitalize="none"
+                    />
+                    <TouchableOpacity
+                      style={styles.verifyButton}
+                      onPress={handleConfirmVerify}
+                      disabled={verifying}
+                    >
+                      {verifying ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <Text style={styles.verifyButtonText}>Confirmar</Text>
+                      )}
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.verifyButton}
+                    onPress={handleRequestCaptcha}
+                    disabled={requestingCaptcha}
+                  >
+                    {requestingCaptcha ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <Text style={styles.verifyButtonText}>Obtener código de verificación</Text>
+                    )}
+                  </TouchableOpacity>
+                )}
               </>
             )}
           </View>
@@ -365,6 +410,13 @@ const styles = StyleSheet.create({
   },
   sectionToggleText: { fontSize: 16, fontWeight: '600', color: '#333' },
   senescytHint: { fontSize: 13, color: '#888', marginBottom: 8, lineHeight: 18 },
+  captchaImage: {
+    width: '100%',
+    height: 60,
+    borderRadius: 6,
+    marginTop: 8,
+    backgroundColor: '#fafafa',
+  },
   verifyButton: {
     backgroundColor: '#F5A623',
     borderRadius: 6,
