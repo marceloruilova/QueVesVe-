@@ -174,6 +174,7 @@ export interface FeedItem {
   likes: number;
   comments: number;
   liked_by_user: boolean;
+  is_following: boolean;
   uri: string | null;
   thumbnail_url: string | null;
   views_count: number | null;

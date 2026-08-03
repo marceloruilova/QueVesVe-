@@ -4,11 +4,15 @@ import { fireEvent, render } from '@testing-library/react-native';
 const mockRecordView = jest.fn();
 const mockToggleLike = jest.fn();
 const mockUpdateVideo = jest.fn();
+const mockFollowUser = jest.fn();
+const mockUnfollowUser = jest.fn();
 
 jest.mock('../services/api', () => ({
   recordView: (...args: unknown[]) => mockRecordView(...args),
   toggleLike: (...args: unknown[]) => mockToggleLike(...args),
   updateVideo: (...args: unknown[]) => mockUpdateVideo(...args),
+  followUser: (...args: unknown[]) => mockFollowUser(...args),
+  unfollowUser: (...args: unknown[]) => mockUnfollowUser(...args),
 }));
 
 const mockUseAuth = jest.fn();
@@ -73,6 +77,7 @@ const baseItem = {
   likes: 3,
   comments: 1,
   liked_by_user: false,
+  is_following: false,
   uri: 'https://example.com/video.mp4',
 };
 
@@ -191,5 +196,52 @@ describe('Feed — edición de videos propios', () => {
     );
     // El texto de música que se muestra sobre el video debe reflejar el nuevo valor guardado.
     expect(getByText('Nueva canción')).toBeTruthy();
+  });
+});
+
+// Nuevo: botón de seguir junto al nombre de usuario en el feed, con la misma
+// lógica de seguir/dejar de seguir que ya existía en el perfil del usuario.
+describe('Feed — botón de seguir junto al perfil', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('no muestra el botón de seguir en el video propio', async () => {
+    mockUseAuth.mockReturnValue({ accessToken: 'token-123', user: { id: 10 } });
+
+    const { queryByTestId } = await render(<Feed item={baseItem} play={false} mountVideo />);
+
+    expect(queryByTestId('feed-follow-button')).toBeNull();
+  });
+
+  it('muestra "Seguir" y llama a followUser al presionarlo', async () => {
+    mockUseAuth.mockReturnValue({ accessToken: 'token-123', user: { id: 999 } });
+    mockFollowUser.mockResolvedValue({ followers_count: 1 });
+
+    const { getByTestId, getByText } = await render(
+      <Feed item={baseItem} play={false} mountVideo />,
+    );
+
+    expect(getByText('Seguir')).toBeTruthy();
+    await fireEvent.press(getByTestId('feed-follow-button'));
+
+    expect(mockFollowUser).toHaveBeenCalledWith(10, 'token-123');
+    expect(getByText('Siguiendo')).toBeTruthy();
+  });
+
+  it('muestra "Siguiendo" y llama a unfollowUser al presionarlo cuando ya sigue al usuario', async () => {
+    mockUseAuth.mockReturnValue({ accessToken: 'token-123', user: { id: 999 } });
+    mockUnfollowUser.mockResolvedValue({ followers_count: 0 });
+
+    const followingItem = { ...baseItem, is_following: true };
+    const { getByTestId, getByText } = await render(
+      <Feed item={followingItem} play={false} mountVideo />,
+    );
+
+    expect(getByText('Siguiendo')).toBeTruthy();
+    await fireEvent.press(getByTestId('feed-follow-button'));
+
+    expect(mockUnfollowUser).toHaveBeenCalledWith(10, 'token-123');
+    expect(getByText('Seguir')).toBeTruthy();
   });
 });

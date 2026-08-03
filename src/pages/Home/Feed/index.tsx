@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Image, Animated, Easing, TouchableOpacity, Pressable, Share } from 'react-native';
+import { Image, Animated, Easing, TouchableOpacity, Pressable, Share, ActivityIndicator } from 'react-native';
 
 import { FontAwesome, AntDesign } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -9,7 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
 
 import { useAuth } from '../../../contexts/AuthContext';
-import { toggleLike, recordView } from '../../../services/api';
+import { toggleLike, recordView, followUser, unfollowUser } from '../../../services/api';
 import { RootStackParamList } from '../../../types/navigation';
 import CommentsModal from './CommentsModal';
 import EditVideoModal from './EditVideoModal';
@@ -21,6 +21,9 @@ import {
   Details,
   Actions,
   User,
+  UserRow,
+  FollowButton,
+  FollowButtonText,
   Tags,
   Music,
   MusicBox,
@@ -39,6 +42,7 @@ interface Item {
   likes: number;
   comments: number;
   liked_by_user: boolean;
+  is_following: boolean;
   uri: string | null;
 }
 
@@ -53,6 +57,8 @@ const Feed: React.FC<Props> = ({ play, mountVideo, item }) => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [liked, setLiked] = useState(item.liked_by_user);
   const [likesCount, setLikesCount] = useState(item.likes);
+  const [isFollowing, setIsFollowing] = useState(item.is_following);
+  const [followLoading, setFollowLoading] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -102,6 +108,24 @@ const Feed: React.FC<Props> = ({ play, mountVideo, item }) => {
 
   const handleShare = async () => {
     await Share.share({ message: `Mirá este video en QueVesVe!& https://quevesve.app` });
+  };
+
+  const handleFollow = async () => {
+    if (!accessToken) return;
+    const nextFollowing = !isFollowing;
+    setFollowLoading(true);
+    try {
+      if (nextFollowing) {
+        await followUser(item.user_id, accessToken);
+      } else {
+        await unfollowUser(item.user_id, accessToken);
+      }
+      setIsFollowing(nextFollowing);
+    } catch {
+      // sin cambios ante error
+    } finally {
+      setFollowLoading(false);
+    }
   };
 
   const handleLike = async () => {
@@ -158,15 +182,31 @@ const Feed: React.FC<Props> = ({ play, mountVideo, item }) => {
         ) : null}
       </Container>
       <Details>
-        <TouchableOpacity
-          onPress={() => {
-            if (item.user_id) {
-              navigation.navigate('UserProfile', { userId: item.user_id });
-            }
-          }}
-        >
-          <User>{item.username}</User>
-        </TouchableOpacity>
+        <UserRow>
+          <TouchableOpacity
+            onPress={() => {
+              if (item.user_id) {
+                navigation.navigate('UserProfile', { userId: item.user_id });
+              }
+            }}
+          >
+            <User>{item.username}</User>
+          </TouchableOpacity>
+          {!isOwner && (
+            <FollowButton
+              following={isFollowing}
+              onPress={handleFollow}
+              disabled={followLoading}
+              testID="feed-follow-button"
+            >
+              {followLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <FollowButtonText>{isFollowing ? 'Siguiendo' : 'Seguir'}</FollowButtonText>
+              )}
+            </FollowButton>
+          )}
+        </UserRow>
         <Tags>{tags}</Tags>
         <MusicBox>
           <FontAwesome name="music" size={15} color="#f5f5f5" />

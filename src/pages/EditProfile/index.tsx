@@ -11,10 +11,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  Modal,
 } from 'react-native';
 
 import { AntDesign, MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
@@ -24,6 +26,25 @@ import { updateUserProfile, verifySenescyt } from '../../services/api';
 import { RootStackParamList } from '../../types/navigation';
 
 type NavProp = StackNavigationProp<RootStackParamList>;
+
+function parseBirthDate(value: string): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatBirthDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function defaultBirthDate(): Date {
+  const date = new Date();
+  date.setFullYear(date.getFullYear() - 18);
+  return date;
+}
 
 const EditProfile: React.FC = () => {
   const { user, accessToken, updateUser } = useAuth();
@@ -39,6 +60,7 @@ const EditProfile: React.FC = () => {
   const [senescytNumber, setSenescytNumber] = useState(user?.senescyt_number ?? '');
   const [cedula, setCedula] = useState('');
   const [localImageUri, setLocalImageUri] = useState<string | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -47,6 +69,15 @@ const EditProfile: React.FC = () => {
   const [showProfessional, setShowProfessional] = useState(
     !!(user?.professional_title || user?.senescyt_number),
   );
+
+  const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    if (event.type === 'set' && selectedDate) {
+      setBirthDate(formatBirthDate(selectedDate));
+    }
+  };
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -193,14 +224,48 @@ const EditProfile: React.FC = () => {
           />
 
           <Text style={styles.fieldLabel}>Fecha de nacimiento</Text>
-          <TextInput
-            style={styles.input}
-            value={birthDate}
-            onChangeText={setBirthDate}
-            placeholder="AAAA-MM-DD"
-            keyboardType="numbers-and-punctuation"
-            maxLength={10}
-          />
+          <TouchableOpacity
+            style={styles.dateInput}
+            onPress={() => setShowDatePicker(true)}
+            testID="birth-date-field"
+          >
+            <Text style={birthDate ? styles.dateInputText : styles.dateInputPlaceholder}>
+              {birthDate || 'AAAA-MM-DD'}
+            </Text>
+            <AntDesign name="calendar" size={18} color="#888" />
+          </TouchableOpacity>
+
+          {showDatePicker && Platform.OS === 'android' && (
+            <DateTimePicker
+              value={parseBirthDate(birthDate) ?? defaultBirthDate()}
+              mode="date"
+              display="default"
+              maximumDate={new Date()}
+              onChange={handleDateChange}
+            />
+          )}
+
+          {Platform.OS === 'ios' && (
+            <Modal visible={showDatePicker} transparent animationType="slide">
+              <View style={styles.datePickerOverlay}>
+                <View style={styles.datePickerSheet}>
+                  <View style={styles.datePickerHeader}>
+                    <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                      <Text style={styles.datePickerDoneText}>Listo</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <DateTimePicker
+                    value={parseBirthDate(birthDate) ?? defaultBirthDate()}
+                    mode="date"
+                    display="spinner"
+                    maximumDate={new Date()}
+                    onChange={handleDateChange}
+                  />
+                </View>
+              </View>
+            </Modal>
+          )}
+
           {user?.is_adult ? (
             <View style={styles.adultBadge}>
               <AntDesign name="check-circle" size={14} color="#27ae60" />
@@ -208,7 +273,7 @@ const EditProfile: React.FC = () => {
             </View>
           ) : (
             <Text style={styles.birthDateHint}>
-              Necesitás ser mayor de 18 años para usar el chat. Ingresá tu fecha en formato AAAA-MM-DD.
+              Necesitás ser mayor de 18 años para usar el chat. Tocá el campo de arriba para elegir tu fecha de nacimiento.
             </Text>
           )}
         </View>
@@ -352,6 +417,37 @@ const styles = StyleSheet.create({
     backgroundColor: '#fafafa',
   },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
+  dateInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#e6e6e6',
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: '#fafafa',
+  },
+  dateInputText: { fontSize: 15, color: '#000' },
+  dateInputPlaceholder: { fontSize: 15, color: '#999' },
+  datePickerOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  datePickerSheet: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  datePickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    padding: 12,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#ddd',
+  },
+  datePickerDoneText: { color: '#F5A623', fontWeight: 'bold', fontSize: 16 },
   sectionToggle: {
     flexDirection: 'row',
     alignItems: 'center',

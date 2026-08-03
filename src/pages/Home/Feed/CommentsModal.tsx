@@ -6,11 +6,13 @@ import {
   FlatList,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
+  Keyboard,
   Platform,
   ActivityIndicator,
   StyleSheet,
+  useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AntDesign } from '@expo/vector-icons';
 
@@ -25,10 +27,29 @@ interface Props {
 
 const CommentsModal: React.FC<Props> = ({ videoId, visible, onClose }) => {
   const { accessToken } = useAuth();
+  const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  // RN's KeyboardAvoidingView no calcula bien el espacio disponible dentro de
+  // un <Modal> en Android (el diálogo nativo tiene su propia ventana), lo que
+  // hacía que el input quedara oculto/clippeado mientras el teclado estaba
+  // abierto: el texto tipeado no se veía hasta minimizar el teclado. Se
+  // reemplaza por un ajuste manual usando la altura real del teclado.
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvent, e => setKeyboardHeight(e.endCoordinates.height));
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardHeight(0));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const fetchComments = useCallback(async () => {
     if (!accessToken) return;
@@ -69,9 +90,13 @@ const CommentsModal: React.FC<Props> = ({ videoId, visible, onClose }) => {
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.sheet}
+        <View
+          style={[
+            styles.sheet,
+            keyboardHeight > 0
+              ? { maxHeight: windowHeight - keyboardHeight - insets.top, marginBottom: keyboardHeight }
+              : { maxHeight: windowHeight * 0.7, marginBottom: insets.bottom },
+          ]}
         >
           <View style={styles.header}>
             <Text style={styles.title}>Comentarios</Text>
@@ -123,7 +148,7 @@ const CommentsModal: React.FC<Props> = ({ videoId, visible, onClose }) => {
               )}
             </TouchableOpacity>
           </View>
-        </KeyboardAvoidingView>
+        </View>
       </View>
     </Modal>
   );
@@ -139,7 +164,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
-    maxHeight: '70%',
     minHeight: 300,
   },
   header: {

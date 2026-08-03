@@ -20,8 +20,31 @@ export const Details = styled.View`
 export const User = styled.Text`
   font-size: 18px;
   font-weight: bold;
-  padding: 10px 0;
   color: #fff;
+`;
+
+export const UserRow = styled.View`
+  flex-direction: row;
+  align-items: center;
+  padding: 10px 0;
+  gap: 10px;
+`;
+
+export const FollowButton = styled.TouchableOpacity.attrs({
+  activeOpacity: 0.8,
+})<{ following?: boolean }>`
+  padding: 4px 12px;
+  border-radius: 4px;
+  border-width: 1.5px;
+  border-color: #fff;
+  background-color: ${({ following }: { following?: boolean }) =>
+    following ? 'rgba(255,255,255,0.15)' : '#F5A623'};
+`;
+
+export const FollowButtonText = styled.Text`
+  color: #fff;
+  font-size: 13px;
+  font-weight: bold;
 `;
 
 export const Tags = styled.Text`
