@@ -13,6 +13,7 @@ import {
   Alert,
   StyleSheet,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FontAwesome, AntDesign } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -69,6 +70,7 @@ interface Props {
 const Feed: React.FC<Props> = ({ play, mountVideo, item, onDeleted }) => {
   const { accessToken, user } = useAuth();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
   const [liked, setLiked] = useState(item.liked_by_user);
   const [likesCount, setLikesCount] = useState(item.likes);
   const [isFollowing, setIsFollowing] = useState(item.is_following);
@@ -380,7 +382,7 @@ const Feed: React.FC<Props> = ({ play, mountVideo, item, onDeleted }) => {
           onRequestClose={() => setShowOptions(false)}
         >
           <Pressable style={optionsStyles.overlay} onPress={() => setShowOptions(false)}>
-            <View style={optionsStyles.sheet}>
+            <View style={[optionsStyles.sheet, { paddingBottom: insets.bottom + 8 }]}>
               <TouchableOpacity
                 style={optionsStyles.option}
                 testID="feed-options-edit"
@@ -429,7 +431,6 @@ const optionsStyles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
-    paddingBottom: 24,
   },
   option: {
     flexDirection: 'row',

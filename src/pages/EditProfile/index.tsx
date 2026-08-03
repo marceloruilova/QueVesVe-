@@ -12,6 +12,7 @@ import {
   Platform,
   Image,
   Modal,
+  StatusBar,
 } from 'react-native';
 
 import { AntDesign, MaterialIcons } from '@expo/vector-icons';
@@ -19,6 +20,7 @@ import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import avatar from '../../assets/avatar.png';
 import { useAuth } from '../../contexts/AuthContext';
@@ -49,6 +51,7 @@ function defaultBirthDate(): Date {
 const EditProfile: React.FC = () => {
   const { user, accessToken, updateUser } = useAuth();
   const navigation = useNavigation<NavProp>();
+  const insets = useSafeAreaInsets();
 
   const [username, setUsername] = useState(user?.username ?? '');
   const [bio, setBio] = useState(user?.bio ?? '');
@@ -248,7 +251,7 @@ const EditProfile: React.FC = () => {
           {Platform.OS === 'ios' && (
             <Modal visible={showDatePicker} transparent animationType="slide">
               <View style={styles.datePickerOverlay}>
-                <View style={styles.datePickerSheet}>
+                <View style={[styles.datePickerSheet, { paddingBottom: insets.bottom }]}>
                   <View style={styles.datePickerHeader}>
                     <TouchableOpacity onPress={() => setShowDatePicker(false)}>
                       <Text style={styles.datePickerDoneText}>Listo</Text>
@@ -371,7 +374,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 44,
+    // StatusBar.currentHeight da el alto real de la barra de estado en Android
+    // (varía por dispositivo); un valor fijo de 44 (pensado para el notch de
+    // iOS) dejaba de más espacio del necesario en Android y empujaba el botón
+    // "Guardar" más abajo de lo esperado.
+    paddingTop: StatusBar.currentHeight || 44,
     paddingBottom: 12,
     borderBottomWidth: 0.5,
     borderBottomColor: '#dadada',

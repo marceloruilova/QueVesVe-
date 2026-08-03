@@ -9,6 +9,7 @@ import {
   ScrollView,
   FlatList,
   Alert,
+  StatusBar,
 } from 'react-native';
 
 import { AntDesign, Ionicons } from '@expo/vector-icons';
@@ -305,7 +306,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 50,
+    // Alto real de la barra de estado en Android + margen visual; un valor
+    // fijo de 50 (pensado para iOS) dejaba de más espacio en Android.
+    paddingTop: (StatusBar.currentHeight || 44) + 6,
     paddingHorizontal: 16,
     paddingBottom: 12,
   },

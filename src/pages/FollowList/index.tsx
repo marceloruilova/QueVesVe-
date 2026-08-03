@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
+  StatusBar,
 } from 'react-native';
 
 import { AntDesign } from '@expo/vector-icons';
@@ -98,7 +99,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 44,
+    paddingTop: StatusBar.currentHeight || 44,
     paddingBottom: 10,
     borderBottomWidth: 0.5,
     borderBottomColor: '#dadada',

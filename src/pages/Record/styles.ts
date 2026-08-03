@@ -1,3 +1,4 @@
+import { StatusBar } from 'react-native';
 import styled from 'styled-components/native';
 
 export const Container = styled.View`
@@ -9,7 +10,10 @@ export const Container = styled.View`
 `;
 
 export const Header = styled.View`
-  margin-top: 10px;
+  /* Alto real de la barra de estado (o el notch en iOS) + margen visual, así
+     los botones de cerrar/galería/voltear no quedan pegados al borde o
+     tapados por el notch/cámara frontal en pantalla completa. */
+  margin-top: ${(StatusBar.currentHeight || 44) + 10}px;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;

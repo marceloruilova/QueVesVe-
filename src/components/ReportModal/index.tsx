@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Modal,
   View,
@@ -9,7 +9,11 @@ import {
   Alert,
   StyleSheet,
   ScrollView,
+  Keyboard,
+  Platform,
+  useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { reportVideo } from '../../services/api';
@@ -31,9 +35,26 @@ interface Props {
 
 const ReportModal: React.FC<Props> = ({ videoId, visible, onClose }) => {
   const { accessToken } = useAuth();
+  const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   const [selectedReason, setSelectedReason] = useState('');
   const [details, setDetails] = useState('');
   const [loading, setLoading] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  // Igual que en CommentsModal/EditVideoModal: dentro de un <Modal> en Android
+  // el teclado puede tapar el input/botón de enviar sin que el sistema
+  // reserve espacio solo, así que se ajusta a mano con la altura real.
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvent, e => setKeyboardHeight(e.endCoordinates.height));
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardHeight(0));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const reset = () => {
     setSelectedReason('');
@@ -69,7 +90,14 @@ const ReportModal: React.FC<Props> = ({ videoId, visible, onClose }) => {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
       <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={handleClose} />
-      <View style={styles.sheet}>
+      <View
+        style={[
+          styles.sheet,
+          keyboardHeight > 0
+            ? { maxHeight: windowHeight - keyboardHeight - insets.top, marginBottom: keyboardHeight }
+            : { maxHeight: windowHeight * 0.8, marginBottom: insets.bottom },
+        ]}
+      >
         <View style={styles.handle} />
         <View style={styles.header}>
           <Text style={styles.title}>Reportar video</Text>
@@ -137,8 +165,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingHorizontal: 20,
-    paddingBottom: 40,
-    maxHeight: '80%',
+    paddingBottom: 20,
   },
   handle: {
     width: 40,

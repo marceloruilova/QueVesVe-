@@ -1,3 +1,4 @@
+import { StatusBar } from 'react-native';
 import styled from 'styled-components/native';
 
 export const Container = styled.View`
@@ -9,7 +10,7 @@ export const Header = styled.View`
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding-top: 50px;
+  padding-top: ${(StatusBar.currentHeight || 44) + 6}px;
   padding-horizontal: 16px;
   padding-bottom: 12px;
 `;

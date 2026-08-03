@@ -5,12 +5,14 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
+  Keyboard,
   Platform,
   ActivityIndicator,
   StyleSheet,
   Alert,
+  useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AntDesign } from '@expo/vector-icons';
 
@@ -37,10 +39,28 @@ const EditVideoModal: React.FC<Props> = ({
   onSaved,
 }) => {
   const { accessToken } = useAuth();
+  const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   const [description, setDescription] = useState(initialDescription);
   const [tags, setTags] = useState(initialTags);
   const [music, setMusic] = useState(initialMusic);
   const [saving, setSaving] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  // KeyboardAvoidingView no calcula bien el espacio disponible dentro de un
+  // <Modal> en Android (el diálogo nativo tiene su propia ventana), lo que
+  // podía dejar el botón "Guardar" oculto detrás del teclado. Se ajusta
+  // manualmente con la altura real del teclado, igual que en CommentsModal.
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvent, e => setKeyboardHeight(e.endCoordinates.height));
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardHeight(0));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   useEffect(() => {
     if (visible) {
@@ -71,9 +91,13 @@ const EditVideoModal: React.FC<Props> = ({
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.sheet}
+        <View
+          style={[
+            styles.sheet,
+            keyboardHeight > 0
+              ? { maxHeight: windowHeight - keyboardHeight - insets.top, marginBottom: keyboardHeight }
+              : { maxHeight: windowHeight * 0.8, marginBottom: insets.bottom },
+          ]}
         >
           <View style={styles.header}>
             <Text style={styles.title}>Editar video</Text>
@@ -130,7 +154,7 @@ const EditVideoModal: React.FC<Props> = ({
               )}
             </TouchableOpacity>
           </View>
-        </KeyboardAvoidingView>
+        </View>
       </View>
     </Modal>
   );
@@ -146,7 +170,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
-    maxHeight: '80%',
   },
   header: {
     flexDirection: 'row',
