@@ -138,7 +138,10 @@ const Discover: React.FC = () => {
   };
 
   const renderUserItem = ({ item }: { item: UserSearchItem }) => (
-    <UserCard>
+    <UserCard
+      onPress={() => navigation.navigate('UserProfile', { userId: item.id })}
+      testID="discover-user-card"
+    >
       <UserAvatar
         source={
           item.profile_picture
@@ -166,7 +169,10 @@ const Discover: React.FC = () => {
   );
 
   const renderVideoItem = ({ item, index }: { item: FeedItem; index: number }) => (
-    <VideoCard>
+    <VideoCard
+      onPress={() => navigation.navigate('VideoViewer', { videos: activeVideos, startIndex: index })}
+      testID="discover-video-card"
+    >
       <VideoThumb
         source={
           item.thumbnail_url

@@ -2,6 +2,7 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 
 const mockGetUserVideos = jest.fn();
+let mockRouteParams: Record<string, unknown> = { userId: 5, startIndex: 1 };
 
 jest.mock('../services/api', () => ({
   getUserVideos: (...args: unknown[]) => mockGetUserVideos(...args),
@@ -15,7 +16,7 @@ jest.mock('@react-navigation/native', () => {
   const ReactActual = require('react');
   return {
     useNavigation: () => ({ goBack: jest.fn() }),
-    useRoute: () => ({ params: { userId: 5, startIndex: 1 } }),
+    useRoute: () => ({ params: mockRouteParams }),
     useIsFocused: () => true,
     useFocusEffect: (cb: () => void | (() => void)) => {
       ReactActual.useEffect(() => {
@@ -62,6 +63,7 @@ const videos = [
 describe('VideoViewer — reproduce el video tocado desde el perfil', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockRouteParams = { userId: 5, startIndex: 1 };
     mockGetUserVideos.mockResolvedValue(videos);
   });
 
@@ -82,5 +84,32 @@ describe('VideoViewer — reproduce el video tocado desde el perfil', () => {
     await render(<VideoViewer />);
 
     expect(mockGetUserVideos).toHaveBeenCalledWith(5, 'token-123');
+  });
+});
+
+// Regresión: los resultados de Discover (búsqueda de videos, tab Top) son de
+// creadores distintos, así que no se puede usar el modo perfil (pediría los
+// videos de un solo userId). VideoViewer también acepta la lista ya armada.
+describe('VideoViewer — lista de videos ya armada (búsqueda/top en Discover)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockRouteParams = { videos, startIndex: 2 };
+  });
+
+  it('usa la lista recibida sin pedir videos por userId', async () => {
+    const { findByTestId } = await render(<VideoViewer />);
+
+    await findByTestId('viewer-feed-300');
+    expect(mockGetUserVideos).not.toHaveBeenCalled();
+  });
+
+  it('arranca en el índice indicado de la lista', async () => {
+    const { findByTestId } = await render(<VideoViewer />);
+
+    const pager = await findByTestId('video-viewer-pager');
+    expect(pager.props.initialPage).toBe(2);
+
+    const activeVideo = await findByTestId('viewer-feed-300');
+    expect(activeVideo.props.play).toBe(true);
   });
 });

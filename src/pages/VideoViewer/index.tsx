@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, TouchableOpacity, ActivityIndicator, Text, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, ActivityIndicator, Text, StyleSheet, StatusBar } from 'react-native';
 
 import { AntDesign } from '@expo/vector-icons';
 import { useFocusEffect, useIsFocused, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -19,14 +19,20 @@ const VideoViewer: React.FC = () => {
   const navigation = useNavigation<NavProp>();
   const route = useRoute<VideoViewerRouteProp>();
   const isFocused = useIsFocused();
-  const { userId, startIndex } = route.params;
+  const { startIndex } = route.params;
+  const userId = 'userId' in route.params ? route.params.userId : undefined;
+  const initialVideos = 'videos' in route.params ? route.params.videos : undefined;
 
-  const [videos, setVideos] = useState<FeedItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [videos, setVideos] = useState<FeedItem[]>(initialVideos ?? []);
+  const [loading, setLoading] = useState(initialVideos === undefined);
   const [active, setActive] = useState(startIndex);
 
   useFocusEffect(
     useCallback(() => {
+      // Modo perfil: se pasa el userId y acá se piden sus videos. Modo lista
+      // (búsqueda de videos, top de vistos, etc.): la lista ya viene armada
+      // en los params porque son videos de distintos usuarios, no de uno solo.
+      if (userId === undefined) return;
       if (!accessToken) return;
       setLoading(true);
       getUserVideos(userId, accessToken)
@@ -92,7 +98,7 @@ const styles = StyleSheet.create({
   emptyText: { color: '#aaa', fontSize: 15 },
   backButton: {
     position: 'absolute',
-    top: 44,
+    top: StatusBar.currentHeight || 44,
     left: 12,
     zIndex: 20,
     padding: 10,

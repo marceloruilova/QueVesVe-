@@ -72,7 +72,7 @@ export const EmptyText = styled.Text`
   color: #aaa;
 `;
 
-export const UserCard = styled.View`
+export const UserCard = styled.TouchableOpacity.attrs({ activeOpacity: 0.7 })`
   flex-direction: row;
   align-items: center;
   padding: 12px 16px;
@@ -116,7 +116,7 @@ export const FollowButtonText = styled.Text<{ following: boolean }>`
   color: ${(props: { following: boolean }) => (props.following ? '#555' : '#fff')};
 `;
 
-export const VideoCard = styled.View`
+export const VideoCard = styled.TouchableOpacity.attrs({ activeOpacity: 0.7 })`
   flex-direction: row;
   align-items: center;
   padding: 10px 16px;
