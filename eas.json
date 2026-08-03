@@ -6,7 +6,8 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "node": "22.13.0"
     },
     "preview": {
       "distribution": "internal",
@@ -15,7 +16,8 @@
       },
       "env": {
         "API_BASE_URL": "https://api.quevesve.app"
-      }
+      },
+      "node": "22.13.0"
     },
     "production": {
       "autoIncrement": true,
@@ -24,7 +26,8 @@
       },
       "android": {
         "buildType": "app-bundle"
-      }
+      },
+      "node": "22.13.0"
     }
   },
   "submit": {

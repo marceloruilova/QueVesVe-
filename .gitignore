@@ -1,6 +1,5 @@
 node_modules/
 .expo/
-package-lock.json
 npm-debug.*
 *.jks
 *.p8
@@ -19,5 +18,4 @@ web-report/
 .env
 .env.local
 
-package-lock.json
 yarn.lock
