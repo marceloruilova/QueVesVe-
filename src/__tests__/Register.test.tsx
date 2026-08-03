@@ -44,6 +44,7 @@ describe('Register — flujo de creación de cuenta y verificación de email', (
     await fireEvent.changeText(getByPlaceholderText('Usuario'), 'nuevo');
     await fireEvent.changeText(getByPlaceholderText('Email'), 'nuevo@test.com');
     await fireEvent.changeText(getByPlaceholderText('Contraseña'), PASSWORD);
+    await fireEvent.changeText(getByPlaceholderText('Repetí tu contraseña'), PASSWORD);
 
     await fireEvent.press(getByText('Registrarse'));
 
@@ -64,6 +65,7 @@ describe('Register — flujo de creación de cuenta y verificación de email', (
     await fireEvent.changeText(getByPlaceholderText('Usuario'), 'dup');
     await fireEvent.changeText(getByPlaceholderText('Email'), 'dup@test.com');
     await fireEvent.changeText(getByPlaceholderText('Contraseña'), PASSWORD);
+    await fireEvent.changeText(getByPlaceholderText('Repetí tu contraseña'), PASSWORD);
     await fireEvent.press(getByText('Registrarse'));
 
     expect(await findByText('El usuario ya existe.')).toBeTruthy();
@@ -79,5 +81,39 @@ describe('Register — flujo de creación de cuenta y verificación de email', (
     await fireEvent.press(getByText('Registrarse'));
 
     expect(mockRegister).not.toHaveBeenCalled();
+  });
+
+  // Regresión: no existía el campo "confirmar contraseña", así que un typo al
+  // registrarse quedaba sin detectar hasta el próximo login fallido.
+  it('no registra si "confirmar contraseña" no coincide con la contraseña', async () => {
+    const { getByPlaceholderText, getByText } = await render(<Register />);
+
+    await fireEvent.changeText(getByPlaceholderText('Usuario'), 'nuevo');
+    await fireEvent.changeText(getByPlaceholderText('Email'), 'nuevo@test.com');
+    await fireEvent.changeText(getByPlaceholderText('Contraseña'), PASSWORD);
+    await fireEvent.changeText(getByPlaceholderText('Repetí tu contraseña'), 'OtraPass1');
+    await fireEvent.press(getByText('Registrarse'));
+
+    expect(mockRegister).not.toHaveBeenCalled();
+    expect(getByText('Las contraseñas no coinciden')).toBeTruthy();
+  });
+
+  // El ojito permite ver el texto tipeado en lugar de asteriscos, tanto en la
+  // contraseña como en su confirmación, cada uno con su propio toggle.
+  it('el ojito de contraseña y confirmación alternan secureTextEntry de forma independiente', async () => {
+    const { getByPlaceholderText, getByTestId } = await render(<Register />);
+
+    const passwordInput = getByPlaceholderText('Contraseña');
+    const confirmInput = getByPlaceholderText('Repetí tu contraseña');
+
+    expect(passwordInput.props.secureTextEntry).toBe(true);
+    expect(confirmInput.props.secureTextEntry).toBe(true);
+
+    await fireEvent.press(getByTestId('register-password-toggle'));
+    expect(passwordInput.props.secureTextEntry).toBe(false);
+    expect(confirmInput.props.secureTextEntry).toBe(true);
+
+    await fireEvent.press(getByTestId('register-confirm-password-toggle'));
+    expect(confirmInput.props.secureTextEntry).toBe(false);
   });
 });

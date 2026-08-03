@@ -23,7 +23,13 @@ export const Subtitle = styled.Text`
   margin-bottom: 40px;
 `;
 
-export const Input = styled.TextInput`
+// color y placeholderTextColor van explícitos: sin esto, algunos Android con
+// temas de fábrica muy personalizados (p.ej. clones/rebrands genéricos tipo
+// "X8 Pro") heredan un color de texto/placeholder por defecto que puede
+// terminar blanco sobre blanco -- el campo se ve vacío aunque tenga texto.
+export const Input = styled.TextInput.attrs({
+  placeholderTextColor: '#8f8f91',
+})`
   border-width: 1px;
   border-color: #e6e6e6;
   border-radius: 4px;
@@ -31,6 +37,42 @@ export const Input = styled.TextInput`
   font-size: 15px;
   margin-bottom: 16px;
   background-color: #fafafa;
+  color: #1a1a1a;
+`;
+
+export const FieldLabel = styled.Text`
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 6px;
+  align-self: flex-start;
+`;
+
+export const PasswordFieldWrapper = styled.View`
+  width: 100%;
+  position: relative;
+  margin-bottom: 16px;
+`;
+
+export const PasswordInput = styled.TextInput.attrs({
+  placeholderTextColor: '#8f8f91',
+})`
+  border-width: 1px;
+  border-color: #e6e6e6;
+  border-radius: 4px;
+  padding: 14px 48px 14px 16px;
+  font-size: 15px;
+  background-color: #fafafa;
+  color: #1a1a1a;
+`;
+
+export const EyeButton = styled.TouchableOpacity`
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 48px;
+  justify-content: center;
+  align-items: center;
 `;
 
 export const Button = styled.TouchableOpacity<{ disabled?: boolean }>`

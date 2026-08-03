@@ -10,6 +10,10 @@ import {
   Logo,
   Subtitle,
   Input,
+  FieldLabel,
+  PasswordFieldWrapper,
+  PasswordInput,
+  EyeButton,
   Button,
   ButtonText,
   Footer,
@@ -46,6 +50,9 @@ const Register: React.FC = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [passwordTouched, setPasswordTouched] = useState(false);
@@ -54,14 +61,19 @@ const Register: React.FC = () => {
 
   const requirements = useMemo(() => getPasswordRequirements(password), [password]);
   const passwordValid = requirements.every(r => r.met);
+  const passwordsMatch = confirmPassword.length === 0 || confirmPassword === password;
 
   const handleRegister = async () => {
-    if (!username || !email || !password) {
+    if (!username || !email || !password || !confirmPassword) {
       setError('Por favor completá todos los campos.');
       return;
     }
     if (!passwordValid) {
       setError('La contraseña no cumple los requisitos de seguridad.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Las contraseñas no coinciden.');
       return;
     }
     setLoading(true);
@@ -89,13 +101,17 @@ const Register: React.FC = () => {
       {error ? <ErrorText>{error}</ErrorText> : null}
       {socialError ? <ErrorText>{socialError}</ErrorText> : null}
 
+      <FieldLabel>Nombre de usuario</FieldLabel>
       <Input
         placeholder="Usuario"
         autoCapitalize="none"
         value={username}
         onChangeText={setUsername}
         editable={!isbusy}
+        testID="register-username"
       />
+
+      <FieldLabel>Correo electrónico</FieldLabel>
       <Input
         placeholder="Email"
         autoCapitalize="none"
@@ -103,17 +119,61 @@ const Register: React.FC = () => {
         value={email}
         onChangeText={setEmail}
         editable={!isbusy}
+        testID="register-email"
       />
-      <Input
-        placeholder="Contraseña"
-        secureTextEntry
-        value={password}
-        onChangeText={text => {
-          setPassword(text);
-          setPasswordTouched(true);
-        }}
-        editable={!isbusy}
-      />
+
+      <FieldLabel>Contraseña</FieldLabel>
+      <PasswordFieldWrapper>
+        <PasswordInput
+          placeholder="Contraseña"
+          secureTextEntry={!showPassword}
+          value={password}
+          onChangeText={text => {
+            setPassword(text);
+            setPasswordTouched(true);
+          }}
+          editable={!isbusy}
+          testID="register-password"
+        />
+        <EyeButton
+          onPress={() => setShowPassword(prev => !prev)}
+          testID="register-password-toggle"
+        >
+          <MaterialCommunityIcons
+            name={showPassword ? 'eye-off' : 'eye'}
+            size={20}
+            color="#8f8f91"
+          />
+        </EyeButton>
+      </PasswordFieldWrapper>
+
+      <FieldLabel>Confirmar contraseña</FieldLabel>
+      <PasswordFieldWrapper>
+        <PasswordInput
+          placeholder="Repetí tu contraseña"
+          secureTextEntry={!showConfirmPassword}
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          editable={!isbusy}
+          testID="register-confirm-password"
+        />
+        <EyeButton
+          onPress={() => setShowConfirmPassword(prev => !prev)}
+          testID="register-confirm-password-toggle"
+        >
+          <MaterialCommunityIcons
+            name={showConfirmPassword ? 'eye-off' : 'eye'}
+            size={20}
+            color="#8f8f91"
+          />
+        </EyeButton>
+      </PasswordFieldWrapper>
+
+      {confirmPassword.length > 0 && !passwordsMatch && (
+        <Text style={{ fontSize: 12, color: '#ef4444', width: '100%', marginTop: -12, marginBottom: 12 }}>
+          Las contraseñas no coinciden
+        </Text>
+      )}
 
       {passwordTouched && (
         <View style={{ width: '100%', paddingHorizontal: 24, marginBottom: 8 }}>
@@ -128,7 +188,10 @@ const Register: React.FC = () => {
         </View>
       )}
 
-      <Button onPress={handleRegister} disabled={isbusy || !passwordValid}>
+      <Button
+        onPress={handleRegister}
+        disabled={isbusy || !passwordValid || !confirmPassword || !passwordsMatch}
+      >
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (

@@ -10,6 +10,10 @@ import {
   Logo,
   Subtitle,
   Input,
+  FieldLabel,
+  PasswordFieldWrapper,
+  PasswordInput,
+  EyeButton,
   Button,
   ButtonText,
   Footer,
@@ -31,6 +35,7 @@ const Login: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<AuthStackParams>>();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -62,20 +67,37 @@ const Login: React.FC = () => {
       {error ? <ErrorText>{error}</ErrorText> : null}
       {socialError ? <ErrorText>{socialError}</ErrorText> : null}
 
+      <FieldLabel>Usuario o correo electrónico</FieldLabel>
       <Input
         placeholder="Usuario o email"
         autoCapitalize="none"
         value={username}
         onChangeText={setUsername}
         editable={!isbusy}
+        testID="login-username"
       />
-      <Input
-        placeholder="Contraseña"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-        editable={!isbusy}
-      />
+
+      <FieldLabel>Contraseña</FieldLabel>
+      <PasswordFieldWrapper>
+        <PasswordInput
+          placeholder="Contraseña"
+          secureTextEntry={!showPassword}
+          value={password}
+          onChangeText={setPassword}
+          editable={!isbusy}
+          testID="login-password"
+        />
+        <EyeButton
+          onPress={() => setShowPassword(prev => !prev)}
+          testID="login-password-toggle"
+        >
+          <MaterialCommunityIcons
+            name={showPassword ? 'eye-off' : 'eye'}
+            size={20}
+            color="#8f8f91"
+          />
+        </EyeButton>
+      </PasswordFieldWrapper>
 
       <Button onPress={handleLogin} disabled={isbusy}>
         {loading ? (
