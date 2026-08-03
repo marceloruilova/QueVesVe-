@@ -222,6 +222,27 @@ export async function getFeed(accessToken: string, category?: string): Promise<F
   }
 }
 
+export async function getFollowingFeed(accessToken: string): Promise<FeedItem[]> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/videos/?following=true`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  if (!res.ok) throw new Error('Failed to fetch following feed');
+  try {
+    const data = await res.json();
+    return data.results;
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
+}
+
 export async function getUserVideos(userId: number, accessToken: string): Promise<FeedItem[]> {
   let res: Response;
   try {
@@ -357,6 +378,19 @@ export async function updateVideo(
   } catch {
     throw new Error('Error del servidor. Intentá de nuevo.');
   }
+}
+
+export async function deleteVideo(videoId: number, accessToken: string): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/videos/${videoId}/`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  if (!res.ok) throw new Error('Error al eliminar el video');
 }
 
 export async function toggleLike(

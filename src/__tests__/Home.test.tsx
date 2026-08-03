@@ -2,10 +2,12 @@ import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 
 const mockGetFeed = jest.fn();
+const mockGetFollowingFeed = jest.fn();
 const mockIsFocused = jest.fn();
 
 jest.mock('../services/api', () => ({
   getFeed: (...args: unknown[]) => mockGetFeed(...args),
+  getFollowingFeed: (...args: unknown[]) => mockGetFollowingFeed(...args),
 }));
 
 jest.mock('../contexts/AuthContext', () => ({
@@ -73,6 +75,7 @@ describe('Home — pausa el video activo al perder el foco (cambio de tab)', () 
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetFeed.mockResolvedValue(feedItems);
+    mockGetFollowingFeed.mockResolvedValue([]);
   });
 
   it('reproduce el video activo mientras la screen Home está enfocada', async () => {
@@ -101,6 +104,7 @@ describe('Home — botón para ocultar/mostrar tabs y categorías', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetFeed.mockResolvedValue(feedItems);
+    mockGetFollowingFeed.mockResolvedValue([]);
     mockIsFocused.mockReturnValue(true);
   });
 
@@ -128,5 +132,50 @@ describe('Home — botón para ocultar/mostrar tabs y categorías', () => {
     expect(queryByText('Siguiendo')).toBeTruthy();
     expect(queryByText('Para vos')).toBeTruthy();
     expect(queryByText('Todo')).toBeTruthy();
+  });
+});
+
+// Regresión: el tab "Siguiendo" siempre mostraba "Seguí a alguien para ver su
+// contenido" aunque el usuario ya siguiera gente y esa gente tuviera videos,
+// porque el feed de siguiendo estaba hardcodeado como un array vacío en vez
+// de pedirse al backend.
+describe('Home — tab Siguiendo muestra los videos de las personas seguidas', () => {
+  const followingItems = [
+    {
+      id: 2,
+      user_id: 5,
+      username: 'amigo',
+      profile_picture: null,
+      description: '',
+      tags: '',
+      music: '',
+      likes: 0,
+      comments: 0,
+      liked_by_user: false,
+      is_following: true,
+      uri: 'https://example.com/b.mp4',
+      thumbnail_url: null,
+      views_count: 0,
+      category: '',
+      source_type: 'ugc' as const,
+      author_name: 'amigo',
+    },
+  ];
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetFeed.mockResolvedValue(feedItems);
+    mockGetFollowingFeed.mockResolvedValue(followingItems);
+    mockIsFocused.mockReturnValue(true);
+  });
+
+  it('pide y muestra los videos de las personas seguidas al ir al tab Siguiendo', async () => {
+    const { findByTestId, getByText } = await render(<Home />);
+    await findByTestId('feed-1');
+
+    await fireEvent.press(getByText('Siguiendo'));
+
+    expect(mockGetFollowingFeed).toHaveBeenCalledWith('token-123');
+    await findByTestId('feed-2');
   });
 });

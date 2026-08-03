@@ -1,11 +1,13 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { Alert } from 'react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
 
 const mockRecordView = jest.fn();
 const mockToggleLike = jest.fn();
 const mockUpdateVideo = jest.fn();
 const mockFollowUser = jest.fn();
 const mockUnfollowUser = jest.fn();
+const mockDeleteVideo = jest.fn();
 
 jest.mock('../services/api', () => ({
   recordView: (...args: unknown[]) => mockRecordView(...args),
@@ -13,7 +15,10 @@ jest.mock('../services/api', () => ({
   updateVideo: (...args: unknown[]) => mockUpdateVideo(...args),
   followUser: (...args: unknown[]) => mockFollowUser(...args),
   unfollowUser: (...args: unknown[]) => mockUnfollowUser(...args),
+  deleteVideo: (...args: unknown[]) => mockDeleteVideo(...args),
 }));
+
+jest.spyOn(Alert, 'alert');
 
 const mockUseAuth = jest.fn();
 jest.mock('../contexts/AuthContext', () => ({
@@ -156,20 +161,20 @@ describe('Feed — edición de videos propios', () => {
     jest.clearAllMocks();
   });
 
-  it('no muestra la acción de editar si el video no es del usuario logueado', async () => {
+  it('no muestra el menú de opciones si el video no es del usuario logueado', async () => {
     mockUseAuth.mockReturnValue({ accessToken: 'token-123', user: { id: 999 } });
 
     const { queryByTestId } = await render(<Feed item={editableItem} play={false} mountVideo />);
 
-    expect(queryByTestId('feed-edit-action')).toBeNull();
+    expect(queryByTestId('feed-options-action')).toBeNull();
   });
 
-  it('muestra la acción de editar cuando el video es del usuario logueado', async () => {
+  it('muestra el menú de opciones cuando el video es del usuario logueado', async () => {
     mockUseAuth.mockReturnValue({ accessToken: 'token-123', user: { id: 10 } });
 
     const { getByTestId } = await render(<Feed item={editableItem} play={false} mountVideo />);
 
-    expect(getByTestId('feed-edit-action')).toBeTruthy();
+    expect(getByTestId('feed-options-action')).toBeTruthy();
   });
 
   it('permite agregar descripción y música a un video propio publicado sin ellas', async () => {
@@ -182,7 +187,8 @@ describe('Feed — edición de videos propios', () => {
 
     const { getByTestId, getByText } = await render(<Feed item={editableItem} play={false} mountVideo />);
 
-    await fireEvent.press(getByTestId('feed-edit-action'));
+    await fireEvent.press(getByTestId('feed-options-action'));
+    await fireEvent.press(getByTestId('feed-options-edit'));
     expect(getByTestId('edit-video-description')).toBeTruthy();
 
     await fireEvent.changeText(getByTestId('edit-video-description'), 'Nueva descripción');
@@ -243,5 +249,74 @@ describe('Feed — botón de seguir junto al perfil', () => {
 
     expect(mockUnfollowUser).toHaveBeenCalledWith(10, 'token-123');
     expect(getByText('Seguir')).toBeTruthy();
+  });
+});
+
+// Nuevo: menú de tres puntos en videos propios con opción de eliminar.
+describe('Feed — menú de opciones y eliminar video propio', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('no muestra el menú de opciones en videos ajenos', async () => {
+    mockUseAuth.mockReturnValue({ accessToken: 'token-123', user: { id: 999 } });
+
+    const { queryByTestId } = await render(<Feed item={baseItem} play={false} mountVideo />);
+
+    expect(queryByTestId('feed-options-action')).toBeNull();
+  });
+
+  it('abre el menú y muestra las opciones Editar y Eliminar en un video propio', async () => {
+    mockUseAuth.mockReturnValue({ accessToken: 'token-123', user: { id: 10 } });
+
+    const { getByTestId } = await render(<Feed item={baseItem} play={false} mountVideo />);
+
+    await fireEvent.press(getByTestId('feed-options-action'));
+
+    expect(getByTestId('feed-options-edit')).toBeTruthy();
+    expect(getByTestId('feed-options-delete')).toBeTruthy();
+  });
+
+  it('pide confirmación y elimina el video al confirmar, notificando a onDeleted', async () => {
+    mockUseAuth.mockReturnValue({ accessToken: 'token-123', user: { id: 10 } });
+    mockDeleteVideo.mockResolvedValue(undefined);
+    const onDeleted = jest.fn();
+
+    const { getByTestId } = await render(
+      <Feed item={baseItem} play={false} mountVideo onDeleted={onDeleted} />,
+    );
+
+    await fireEvent.press(getByTestId('feed-options-action'));
+    await fireEvent.press(getByTestId('feed-options-delete'));
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Eliminar video',
+      expect.any(String),
+      expect.any(Array),
+    );
+
+    const buttons = (Alert.alert as jest.Mock).mock.calls[0][2];
+    const confirmButton = buttons.find((b: { text: string }) => b.text === 'Eliminar');
+    await act(async () => {
+      await confirmButton.onPress();
+    });
+
+    expect(mockDeleteVideo).toHaveBeenCalledWith(1, 'token-123');
+    expect(onDeleted).toHaveBeenCalledWith(1);
+  });
+
+  it('no elimina nada si se cancela la confirmación', async () => {
+    mockUseAuth.mockReturnValue({ accessToken: 'token-123', user: { id: 10 } });
+    const onDeleted = jest.fn();
+
+    const { getByTestId } = await render(
+      <Feed item={baseItem} play={false} mountVideo onDeleted={onDeleted} />,
+    );
+
+    await fireEvent.press(getByTestId('feed-options-action'));
+    await fireEvent.press(getByTestId('feed-options-delete'));
+
+    expect(mockDeleteVideo).not.toHaveBeenCalled();
+    expect(onDeleted).not.toHaveBeenCalled();
   });
 });

@@ -9,7 +9,7 @@ import PagerView from 'react-native-pager-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 
-import { getFeed, FeedItem } from '../../services/api';
+import { getFeed, getFollowingFeed, FeedItem } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import Feed from './Feed';
 
@@ -36,6 +36,7 @@ const Home: React.FC = () => {
   const [tab, setTab] = useState(2);
   const [active, setActive] = useState(0);
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
+  const [followingItems, setFollowingItems] = useState<FeedItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [uiVisible, setUiVisible] = useState(true);
 
@@ -47,6 +48,20 @@ const Home: React.FC = () => {
         .catch(() => setFeedItems([]));
     }, [accessToken, selectedCategory]),
   );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!accessToken) return;
+      getFollowingFeed(accessToken)
+        .then(setFollowingItems)
+        .catch(() => setFollowingItems([]));
+    }, [accessToken]),
+  );
+
+  const handleVideoDeleted = (videoId: number) => {
+    setFeedItems(prev => prev.filter(v => v.id !== videoId));
+    setFollowingItems(prev => prev.filter(v => v.id !== videoId));
+  };
 
   const handleCategorySelect = (key: string | null) => {
     setSelectedCategory(key);
@@ -67,7 +82,7 @@ const Home: React.FC = () => {
   ).current;
 
   const forYouFeed = feedItems;
-  const followingFeed: FeedItem[] = [];
+  const followingFeed = followingItems;
 
   const activeFeed = tab === 1 ? followingFeed : forYouFeed;
   const isEmpty = activeFeed.length === 0;
@@ -96,7 +111,7 @@ const Home: React.FC = () => {
             </ToggleButton>
           </HeaderRow>
 
-          {uiVisible && (
+          {uiVisible && tab === 2 && (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -140,6 +155,7 @@ const Home: React.FC = () => {
                 item={item}
                 play={isFocused && index === active}
                 mountVideo={Math.abs(index - active) <= 1}
+                onDeleted={handleVideoDeleted}
               />
             </View>
           ))}

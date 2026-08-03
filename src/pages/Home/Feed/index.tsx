@@ -1,5 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Image, Animated, Easing, TouchableOpacity, Pressable, Share, ActivityIndicator } from 'react-native';
+import {
+  Image,
+  Animated,
+  Easing,
+  TouchableOpacity,
+  Pressable,
+  Share,
+  ActivityIndicator,
+  Modal,
+  View,
+  Text,
+  Alert,
+  StyleSheet,
+} from 'react-native';
 
 import { FontAwesome, AntDesign } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -9,7 +22,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
 
 import { useAuth } from '../../../contexts/AuthContext';
-import { toggleLike, recordView, followUser, unfollowUser } from '../../../services/api';
+import { toggleLike, recordView, followUser, unfollowUser, deleteVideo } from '../../../services/api';
 import { RootStackParamList } from '../../../types/navigation';
 import CommentsModal from './CommentsModal';
 import EditVideoModal from './EditVideoModal';
@@ -50,9 +63,10 @@ interface Props {
   play: boolean;
   mountVideo: boolean;
   item: Item;
+  onDeleted?: (videoId: number) => void;
 }
 
-const Feed: React.FC<Props> = ({ play, mountVideo, item }) => {
+const Feed: React.FC<Props> = ({ play, mountVideo, item, onDeleted }) => {
   const { accessToken, user } = useAuth();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [liked, setLiked] = useState(item.liked_by_user);
@@ -62,6 +76,8 @@ const Feed: React.FC<Props> = ({ play, mountVideo, item }) => {
   const [showComments, setShowComments] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [paused, setPaused] = useState(false);
   const [description, setDescription] = useState(item.description ?? '');
   const [tags, setTags] = useState(item.tags);
@@ -126,6 +142,33 @@ const Feed: React.FC<Props> = ({ play, mountVideo, item }) => {
     } finally {
       setFollowLoading(false);
     }
+  };
+
+  const handleDelete = () => {
+    setShowOptions(false);
+    Alert.alert(
+      'Eliminar video',
+      '¿Seguro que querés eliminar este video? Esta acción no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            if (!accessToken) return;
+            setDeleting(true);
+            try {
+              await deleteVideo(item.id, accessToken);
+              onDeleted?.(item.id);
+            } catch {
+              Alert.alert('Error', 'No se pudo eliminar el video. Intentá de nuevo.');
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   const handleLike = async () => {
@@ -247,13 +290,13 @@ const Feed: React.FC<Props> = ({ play, mountVideo, item }) => {
           <TextAction>Reportar</TextAction>
         </BoxAction>
         {isOwner && (
-          <BoxAction onPress={() => setShowEdit(true)} testID="feed-edit-action">
+          <BoxAction onPress={() => setShowOptions(true)} testID="feed-options-action">
             <FontAwesome
-              name="pencil"
+              name="ellipsis-h"
               size={30}
               color="#fff"
             />
-            <TextAction>Editar</TextAction>
+            <TextAction>Opciones</TextAction>
           </BoxAction>
         )}
         <BoxAction>
@@ -329,8 +372,85 @@ const Feed: React.FC<Props> = ({ play, mountVideo, item }) => {
           }}
         />
       )}
+      {isOwner && (
+        <Modal
+          visible={showOptions}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowOptions(false)}
+        >
+          <Pressable style={optionsStyles.overlay} onPress={() => setShowOptions(false)}>
+            <View style={optionsStyles.sheet}>
+              <TouchableOpacity
+                style={optionsStyles.option}
+                testID="feed-options-edit"
+                onPress={() => {
+                  setShowOptions(false);
+                  setShowEdit(true);
+                }}
+              >
+                <FontAwesome name="pencil" size={20} color="#1a1a1a" />
+                <Text style={optionsStyles.optionText}>Editar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={optionsStyles.option}
+                testID="feed-options-delete"
+                onPress={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <ActivityIndicator size="small" color="#E5363A" />
+                ) : (
+                  <FontAwesome name="trash" size={20} color="#E5363A" />
+                )}
+                <Text style={[optionsStyles.optionText, optionsStyles.deleteText]}>Eliminar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[optionsStyles.option, optionsStyles.cancelOption]}
+                onPress={() => setShowOptions(false)}
+              >
+                <Text style={optionsStyles.optionText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Modal>
+      )}
     </>
   );
 };
+
+const optionsStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  sheet: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 24,
+  },
+  option: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#eee',
+  },
+  optionText: {
+    fontSize: 16,
+    color: '#1a1a1a',
+  },
+  deleteText: {
+    color: '#E5363A',
+  },
+  cancelOption: {
+    borderBottomWidth: 0,
+    justifyContent: 'center',
+  },
+});
 
 export default Feed;
