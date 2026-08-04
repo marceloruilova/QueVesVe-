@@ -25,7 +25,11 @@
         "API_BASE_URL": "https://api.quevesve.app"
       },
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "app-bundle",
+        "buildArtifactPaths": [
+          "android/app/build/outputs/**/*.aab",
+          "android/app/build/outputs/mapping/release/mapping.txt"
+        ]
       },
       "node": "22.13.0"
     }
