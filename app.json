@@ -4,7 +4,6 @@
     "slug": "quevesve",
     "owner": "ccognitions",
     "scheme": "quevesve",
-    "privacy": "public",
     "platforms": ["ios", "android", "web"],
     "version": "1.0.0",
     "orientation": "portrait",
@@ -36,6 +35,7 @@
       "expo-secure-store",
       "expo-font",
       "expo-asset",
+      "@react-native-community/datetimepicker",
       "./plugins/withLargeHeap.js"
     ],
     "extra": {
