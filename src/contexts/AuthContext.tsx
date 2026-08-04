@@ -55,6 +55,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
   const refreshTokenRef = useRef<string | null>(null);
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Incrementa en cada login/logout para que las respuestas async (refreshUser,
+  // doRefresh) que lleguen después de un logout no revivan la sesión ya cerrada.
+  const sessionIdRef = useRef(0);
 
   const clearRefreshTimer = () => {
     if (refreshTimerRef.current) {
@@ -72,16 +75,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const doRefresh = async (): Promise<string | null> => {
+    const sessionId = sessionIdRef.current;
     const rt = refreshTokenRef.current ?? (await SecureStore.getItemAsync('refreshToken'));
     if (!rt) return null;
     try {
       const { access } = await refreshAccessToken(rt);
+      if (sessionIdRef.current !== sessionId) return null;
       setAccessToken(access);
       await SecureStore.setItemAsync('accessToken', access);
       scheduleRefresh(access);
       return access;
     } catch {
-      await logout();
+      if (sessionIdRef.current === sessionId) await logout();
       return null;
     }
   };
@@ -138,6 +143,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const decoded = decodeJWT(data.access);
     const userId = decoded.user_id;
     const profile = await getUserProfile(userId, data.access);
+    sessionIdRef.current += 1;
     refreshTokenRef.current = data.refresh;
     setAccessToken(data.access);
     setUser(profile);
@@ -148,6 +154,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const register = async (username: string, email: string, password: string) => {
     const data = await registerUser(username, email, password);
+    sessionIdRef.current += 1;
     refreshTokenRef.current = data.refresh;
     setAccessToken(data.access);
     setUser(data.user);
@@ -158,6 +165,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const socialLoginFn = async (provider: 'google' | 'facebook', token: string) => {
     const data = await socialAuth(provider, token);
+    sessionIdRef.current += 1;
     refreshTokenRef.current = data.refresh;
     setAccessToken(data.access);
     setUser(data.user);
@@ -167,6 +175,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = async () => {
+    sessionIdRef.current += 1;
     clearRefreshTimer();
     refreshTokenRef.current = null;
     setUser(null);
@@ -181,8 +190,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const refreshUser = async () => {
     if (!accessToken || !user) return;
+    const sessionId = sessionIdRef.current;
     try {
       const profile = await getUserProfile(user.id, accessToken);
+      if (sessionIdRef.current !== sessionId) return;
       setUser(profile);
     } catch {
       // Silencioso: si falla el refetch, se mantiene el estado anterior.

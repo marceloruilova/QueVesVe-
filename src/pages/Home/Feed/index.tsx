@@ -5,7 +5,6 @@ import {
   Easing,
   TouchableOpacity,
   Pressable,
-  Share,
   ActivityIndicator,
   Modal,
   View,
@@ -18,7 +17,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesome, AntDesign } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import * as Clipboard from 'expo-clipboard';
 import { Video, ResizeMode } from 'expo-av';
+import * as Linking from 'expo-linking';
 import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
 
@@ -125,7 +126,9 @@ const Feed: React.FC<Props> = ({ play, mountVideo, item, onDeleted }) => {
   });
 
   const handleShare = async () => {
-    await Share.share({ message: `Mirá este video en QueVesVe!& https://quevesve.app` });
+    const link = Linking.createURL(`video/${item.id}`);
+    await Clipboard.setStringAsync(link);
+    Alert.alert('Link copiado', 'Pegalo en WhatsApp, mail o donde quieras para compartir este video.');
   };
 
   const handleFollow = async () => {
@@ -275,13 +278,13 @@ const Feed: React.FC<Props> = ({ play, mountVideo, item, onDeleted }) => {
           />
           <TextAction>{item.comments}</TextAction>
         </BoxAction>
-        <BoxAction onPress={handleShare}>
+        <BoxAction onPress={handleShare} testID="feed-share-action">
           <FontAwesome
-            name="whatsapp"
-            size={35}
-            color="#06d755"
+            name="link"
+            size={32}
+            color="#fff"
           />
-          <TextAction>Compartir</TextAction>
+          <TextAction>Copiar link</TextAction>
         </BoxAction>
         <BoxAction onPress={() => setShowReport(true)}>
           <FontAwesome

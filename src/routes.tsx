@@ -1,7 +1,8 @@
 import React from 'react';
 
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, LinkingOptions } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import * as Linking from 'expo-linking';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Splash from './pages/Splash';
@@ -28,10 +29,22 @@ const RootNavigator: React.FC = () => {
   return user ? <AppRoutes /> : <AuthStack />;
 };
 
+const linking: LinkingOptions<ReactNavigation.RootParamList> = {
+  prefixes: [Linking.createURL('/'), 'quevesve://'],
+  config: {
+    screens: {
+      VideoViewer: {
+        path: 'video/:videoId',
+        parse: { videoId: (videoId: string) => Number(videoId) },
+      },
+    },
+  },
+};
+
 const Routes: React.FC = () => {
   return (
     <AuthProvider>
-      <NavigationContainer>
+      <NavigationContainer linking={linking}>
         <RootNavigator />
       </NavigationContainer>
     </AuthProvider>

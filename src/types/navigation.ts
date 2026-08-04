@@ -9,7 +9,8 @@ export type RootStackParamList = {
   UserProfile: { userId: number };
   VideoViewer:
     | { userId: number; startIndex: number }
-    | { videos: FeedItem[]; startIndex: number };
+    | { videos: FeedItem[]; startIndex: number }
+    | { videoId: number };
   EditProfile: undefined;
   Conversation: { conversationId: number; otherUsername: string; otherUserId: number };
   FollowList: { userId: number; type: 'followers' | 'following'; title: string };

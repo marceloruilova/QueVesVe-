@@ -264,6 +264,23 @@ export async function getUserVideos(userId: number, accessToken: string): Promis
   }
 }
 
+export async function getVideo(videoId: number, accessToken?: string): Promise<FeedItem> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/videos/${videoId}/`, {
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor.');
+  }
+  if (!res.ok) throw new Error('Video not found');
+  try {
+    return await res.json();
+  } catch {
+    throw new Error('Error del servidor. Intentá de nuevo.');
+  }
+}
+
 export async function getUploadQuota(accessToken: string): Promise<UploadQuota> {
   let res: Response;
   try {

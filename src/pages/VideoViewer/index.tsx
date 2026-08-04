@@ -7,7 +7,7 @@ import PagerView from 'react-native-pager-view';
 import { StackNavigationProp } from '@react-navigation/stack';
 
 import { useAuth } from '../../contexts/AuthContext';
-import { getUserVideos, FeedItem } from '../../services/api';
+import { getUserVideos, getVideo, FeedItem } from '../../services/api';
 import { RootStackParamList } from '../../types/navigation';
 import Feed from '../Home/Feed';
 
@@ -19,9 +19,10 @@ const VideoViewer: React.FC = () => {
   const navigation = useNavigation<NavProp>();
   const route = useRoute<VideoViewerRouteProp>();
   const isFocused = useIsFocused();
-  const { startIndex } = route.params;
   const userId = 'userId' in route.params ? route.params.userId : undefined;
   const initialVideos = 'videos' in route.params ? route.params.videos : undefined;
+  const videoId = 'videoId' in route.params ? route.params.videoId : undefined;
+  const startIndex = 'startIndex' in route.params ? route.params.startIndex : 0;
 
   const [videos, setVideos] = useState<FeedItem[]>(initialVideos ?? []);
   const [loading, setLoading] = useState(initialVideos === undefined);
@@ -32,6 +33,16 @@ const VideoViewer: React.FC = () => {
       // Modo perfil: se pasa el userId y acá se piden sus videos. Modo lista
       // (búsqueda de videos, top de vistos, etc.): la lista ya viene armada
       // en los params porque son videos de distintos usuarios, no de uno solo.
+      // Modo link compartido: se pasa un único videoId (deep link) y acá se
+      // pide ese video puntual, sin importar quién sea el dueño.
+      if (videoId !== undefined) {
+        setLoading(true);
+        getVideo(videoId, accessToken ?? undefined)
+          .then(video => setVideos([video]))
+          .catch(() => setVideos([]))
+          .finally(() => setLoading(false));
+        return;
+      }
       if (userId === undefined) return;
       if (!accessToken) return;
       setLoading(true);
@@ -39,7 +50,7 @@ const VideoViewer: React.FC = () => {
         .then(setVideos)
         .catch(() => setVideos([]))
         .finally(() => setLoading(false));
-    }, [userId, accessToken]),
+    }, [userId, videoId, accessToken]),
   );
 
   let content;
