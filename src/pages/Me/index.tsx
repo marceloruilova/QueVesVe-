@@ -28,6 +28,7 @@ import {
   Avatar,
   Username,
   Content,
+  ProfileTopRow,
   Stats,
   Separator,
   StatsText,
@@ -51,6 +52,7 @@ const Me: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [videos, setVideos] = useState<FeedItem[]>([]);
   const [resendLoading, setResendLoading] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const handleResendVerification = async () => {
     if (!accessToken) return;
@@ -90,8 +92,40 @@ const Me: React.FC = () => {
 
   const ProfileHeader = (
     <Content>
-      <Avatar source={avatar} />
+      <ProfileTopRow>
+        <Avatar source={avatar} />
+        <Stats>
+          <TouchableOpacity
+            onPress={() =>
+              user && navigation.navigate('FollowList', { userId: user.id, type: 'following', title: 'Siguiendo' })
+            }
+          >
+            <StatsColumn>
+              <StatsNumber>{user?.following_count ?? 0}</StatsNumber>
+              <StatsText>Siguiendo</StatsText>
+            </StatsColumn>
+          </TouchableOpacity>
+          <Separator>|</Separator>
+          <TouchableOpacity
+            onPress={() =>
+              user && navigation.navigate('FollowList', { userId: user.id, type: 'followers', title: 'Seguidores' })
+            }
+          >
+            <StatsColumn>
+              <StatsNumber>{user?.followers_count ?? 0}</StatsNumber>
+              <StatsText>Seguidores</StatsText>
+            </StatsColumn>
+          </TouchableOpacity>
+          <Separator>|</Separator>
+          <StatsColumn>
+            <StatsNumber>{videos.length}</StatsNumber>
+            <StatsText>Videos</StatsText>
+          </StatsColumn>
+        </Stats>
+      </ProfileTopRow>
+
       <Username>@{user?.username ?? ''}</Username>
+      <Text style={meStyles.bioText}>{user?.bio || 'Tocá para agregar una bio'}</Text>
 
       {user && !user.email_verified && (
         <EmailVerificationBanner
@@ -101,76 +135,63 @@ const Me: React.FC = () => {
         />
       )}
 
-      <Stats>
-        <TouchableOpacity
-          onPress={() =>
-            user && navigation.navigate('FollowList', { userId: user.id, type: 'following', title: 'Siguiendo' })
-          }
-        >
-          <StatsColumn>
-            <StatsNumber>{user?.following_count ?? 0}</StatsNumber>
-            <StatsText>Siguiendo</StatsText>
-          </StatsColumn>
-        </TouchableOpacity>
-        <Separator>|</Separator>
-        <TouchableOpacity
-          onPress={() =>
-            user && navigation.navigate('FollowList', { userId: user.id, type: 'followers', title: 'Seguidores' })
-          }
-        >
-          <StatsColumn>
-            <StatsNumber>{user?.followers_count ?? 0}</StatsNumber>
-            <StatsText>Seguidores</StatsText>
-          </StatsColumn>
-        </TouchableOpacity>
-        <Separator>|</Separator>
-        <StatsColumn>
-          <StatsNumber>{videos.length}</StatsNumber>
-          <StatsText>Videos</StatsText>
-        </StatsColumn>
-      </Stats>
       <ProfileColumn>
         <ProfileEdit onPress={() => navigation.navigate('EditProfile')}>
           <ProfileText>Editar perfil</ProfileText>
         </ProfileEdit>
         {SHOW_PLACEHOLDER_ICONS && <Bookmark name="bookmark" size={24} color="black" />}
       </ProfileColumn>
-      <StatsText>{user?.bio || 'Tocá para agregar una bio'}</StatsText>
 
       <View style={meStyles.settingsSection}>
-        <Text style={meStyles.sectionTitle}>Ajustes y legal</Text>
         <TouchableOpacity
-          style={meStyles.settingsRow}
-          onPress={() => navigation.navigate('Legal', { tab: 'terms' })}
+          style={meStyles.settingsHeader}
+          onPress={() => setSettingsOpen(open => !open)}
+          testID="settings-toggle"
         >
-          <Ionicons name="document-text-outline" size={20} color="#555" />
-          <Text style={meStyles.settingsText}>Términos y Condiciones</Text>
-          <Ionicons name="chevron-forward" size={16} color="#aaa" />
+          <Text style={meStyles.sectionTitle}>Ajustes y legal</Text>
+          <Ionicons
+            name={settingsOpen ? 'chevron-up' : 'chevron-down'}
+            size={18}
+            color="#aaa"
+          />
         </TouchableOpacity>
-        <TouchableOpacity
-          style={meStyles.settingsRow}
-          onPress={() => navigation.navigate('Legal', { tab: 'privacy' })}
-        >
-          <Ionicons name="shield-checkmark-outline" size={20} color="#555" />
-          <Text style={meStyles.settingsText}>Política de Privacidad</Text>
-          <Ionicons name="chevron-forward" size={16} color="#aaa" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={meStyles.settingsRow}
-          onPress={() => navigation.navigate('Legal', { tab: 'community' })}
-        >
-          <Ionicons name="people-outline" size={20} color="#555" />
-          <Text style={meStyles.settingsText}>Normas de la Comunidad</Text>
-          <Ionicons name="chevron-forward" size={16} color="#aaa" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[meStyles.settingsRow, meStyles.deleteRow]}
-          onPress={() => navigation.navigate('DeleteAccount')}
-        >
-          <Ionicons name="trash-outline" size={20} color="#E5363A" />
-          <Text style={[meStyles.settingsText, meStyles.deleteText]}>Eliminar cuenta</Text>
-          <Ionicons name="chevron-forward" size={16} color="#E5363A" />
-        </TouchableOpacity>
+
+        {settingsOpen && (
+          <>
+            <TouchableOpacity
+              style={meStyles.settingsRow}
+              onPress={() => navigation.navigate('Legal', { tab: 'terms' })}
+            >
+              <Ionicons name="document-text-outline" size={20} color="#555" />
+              <Text style={meStyles.settingsText}>Términos y Condiciones</Text>
+              <Ionicons name="chevron-forward" size={16} color="#aaa" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={meStyles.settingsRow}
+              onPress={() => navigation.navigate('Legal', { tab: 'privacy' })}
+            >
+              <Ionicons name="shield-checkmark-outline" size={20} color="#555" />
+              <Text style={meStyles.settingsText}>Política de Privacidad</Text>
+              <Ionicons name="chevron-forward" size={16} color="#aaa" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={meStyles.settingsRow}
+              onPress={() => navigation.navigate('Legal', { tab: 'community' })}
+            >
+              <Ionicons name="people-outline" size={20} color="#555" />
+              <Text style={meStyles.settingsText}>Normas de la Comunidad</Text>
+              <Ionicons name="chevron-forward" size={16} color="#aaa" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[meStyles.settingsRow, meStyles.deleteRow]}
+              onPress={() => navigation.navigate('DeleteAccount')}
+            >
+              <Ionicons name="trash-outline" size={20} color="#E5363A" />
+              <Text style={[meStyles.settingsText, meStyles.deleteText]}>Eliminar cuenta</Text>
+              <Ionicons name="chevron-forward" size={16} color="#E5363A" />
+            </TouchableOpacity>
+          </>
+        )}
       </View>
       <Text style={meStyles.versionText}>
         QueVesVe!& v{Constants.expoConfig?.version ?? '1.0.0'}
@@ -248,12 +269,24 @@ const Me: React.FC = () => {
 };
 
 const meStyles = StyleSheet.create({
+  bioText: {
+    fontSize: 12,
+    color: '#8f8f91',
+    paddingHorizontal: 10,
+    marginTop: 2,
+  },
   settingsSection: {
     width: '100%',
-    marginTop: 28,
+    marginTop: 16,
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
-    paddingTop: 12,
+  },
+  settingsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 4,
   },
   sectionTitle: {
     fontSize: 12,
@@ -261,8 +294,6 @@ const meStyles = StyleSheet.create({
     color: '#aaa',
     textTransform: 'uppercase',
     letterSpacing: 1,
-    marginBottom: 4,
-    paddingHorizontal: 4,
   },
   settingsRow: {
     flexDirection: 'row',

@@ -227,7 +227,6 @@ const Discover: React.FC = () => {
             />
           )}
         </Search>
-        <AntDesign name="scan" size={25} color="black" />
       </Header>
 
       <TabBar>

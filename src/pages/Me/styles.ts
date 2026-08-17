@@ -25,23 +25,30 @@ export const Title = styled.Text`
 
 export const Content = styled.View`
   padding: 10px;
+`;
+
+export const ProfileTopRow = styled.View`
+  flex-direction: row;
   align-items: center;
+  width: 100%;
 `;
 
 export const Avatar = styled.Image`
-  align-self: center;
-  width: 120px;
-  height: 140px;
+  width: 88px;
+  height: 88px;
+  border-radius: 44px;
 `;
 
 export const Username = styled.Text`
   font-size: 18px;
-  padding: 10px;
+  padding: 10px 10px 0 10px;
+  align-self: flex-start;
 `;
 
 export const Stats = styled.View`
+  flex: 1;
   flex-direction: row;
-  padding: 10px;
+  justify-content: space-around;
   align-items: center;
 `;
 
@@ -70,6 +77,8 @@ export const StatsText = styled.Text`
 export const ProfileColumn = styled.View`
   align-items: center;
   flex-direction: row;
+  justify-content: center;
+  width: 100%;
   padding: 10px;
 `;
 
