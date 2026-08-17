@@ -9,7 +9,7 @@ import PagerView from 'react-native-pager-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 
-import { getFeed, getFollowingFeed, FeedItem } from '../../services/api';
+import { getFeed, getFollowingFeed, FeedItem, FeedPage } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import Feed from './Feed';
 
@@ -29,63 +29,143 @@ const CATEGORY_PILLS: { key: string | null; label: string }[] = [
   { key: 'educacion', label: 'Educación' },
 ];
 
+// Cuántos items antes del final del pager se pide la próxima página --
+// PagerView no expone onEndReached, así que se dispara desde onPageSelected.
+const PREFETCH_THRESHOLD = 3;
+// Techo de items acumulados en memoria por feed, para que una sesión de
+// scroll muy larga (reciclando contenido indefinidamente) no crezca sin límite.
+const MAX_BUFFERED_ITEMS = 500;
+
+interface PaginatedFeedState {
+  items: FeedItem[];
+  page: number;
+  next: string | null;
+  loadingMore: boolean;
+}
+
+const emptyFeedState: PaginatedFeedState = { items: [], page: 1, next: null, loadingMore: false };
+
 const Home: React.FC = () => {
   const { accessToken } = useAuth();
   const isFocused = useIsFocused();
   // tab: 1 = Following, 2 = For You
   const [tab, setTab] = useState(2);
   const [active, setActive] = useState(0);
-  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
-  const [followingItems, setFollowingItems] = useState<FeedItem[]>([]);
+  const [forYouState, setForYouState] = useState<PaginatedFeedState>(emptyFeedState);
+  const [followingState, setFollowingState] = useState<PaginatedFeedState>(emptyFeedState);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [uiVisible, setUiVisible] = useState(true);
+  const pagerRef = useRef<PagerView>(null);
 
-  useFocusEffect(
-    useCallback(() => {
-      if (!accessToken) return;
-      getFeed(accessToken, selectedCategory ?? undefined)
-        .then(setFeedItems)
-        .catch(() => setFeedItems([]));
-    }, [accessToken, selectedCategory]),
-  );
+  const loadForYouFirstPage = useCallback(() => {
+    if (!accessToken) return;
+    getFeed(accessToken, selectedCategory ?? undefined, 1)
+      .then((data: FeedPage) =>
+        setForYouState({ items: data.results, page: 1, next: data.next, loadingMore: false }))
+      .catch(() => setForYouState(emptyFeedState));
+  }, [accessToken, selectedCategory]);
 
-  useFocusEffect(
-    useCallback(() => {
-      if (!accessToken) return;
-      getFollowingFeed(accessToken)
-        .then(setFollowingItems)
-        .catch(() => setFollowingItems([]));
-    }, [accessToken]),
-  );
+  const loadFollowingFirstPage = useCallback(() => {
+    if (!accessToken) return;
+    getFollowingFeed(accessToken, 1)
+      .then((data: FeedPage) =>
+        setFollowingState({ items: data.results, page: 1, next: data.next, loadingMore: false }))
+      .catch(() => setFollowingState(emptyFeedState));
+  }, [accessToken]);
+
+  useFocusEffect(loadForYouFirstPage);
+  useFocusEffect(loadFollowingFirstPage);
+
+  const loadForYouNextPage = useCallback(() => {
+    if (!accessToken) return;
+    setForYouState(prev => {
+      if (prev.loadingMore || prev.items.length >= MAX_BUFFERED_ITEMS) return prev;
+      const nextPage = prev.page + 1;
+      getFeed(accessToken, selectedCategory ?? undefined, nextPage)
+        .then((data: FeedPage) =>
+          setForYouState(cur => ({
+            items: [...cur.items, ...data.results],
+            page: nextPage,
+            next: data.next,
+            loadingMore: false,
+          })))
+        .catch(() => setForYouState(cur => ({ ...cur, loadingMore: false })));
+      return { ...prev, loadingMore: true };
+    });
+  }, [accessToken, selectedCategory]);
+
+  // "Siguiendo" no tiene wraparound en el backend (paginación estándar, no
+  // pasa por el ranking de "Para Ti"): una vez agotadas las páginas reales
+  // (next === null), se recicla mezclando lo ya cargado para que el usuario
+  // pueda seguir deslizando en vez de quedar trabado.
+  const loadFollowingNextPage = useCallback(() => {
+    if (!accessToken) return;
+    setFollowingState(prev => {
+      if (prev.loadingMore || prev.items.length >= MAX_BUFFERED_ITEMS) return prev;
+      if (prev.next) {
+        const nextPage = prev.page + 1;
+        getFollowingFeed(accessToken, nextPage)
+          .then((data: FeedPage) =>
+            setFollowingState(cur => ({
+              items: [...cur.items, ...data.results],
+              page: nextPage,
+              next: data.next,
+              loadingMore: false,
+            })))
+          .catch(() => setFollowingState(cur => ({ ...cur, loadingMore: false })));
+        return { ...prev, loadingMore: true };
+      }
+      if (prev.items.length === 0) return prev;
+      const shuffled = [...prev.items].sort(() => Math.random() - 0.5);
+      return { ...prev, items: [...prev.items, ...shuffled] };
+    });
+  }, [accessToken]);
 
   const handleVideoDeleted = (videoId: number) => {
-    setFeedItems(prev => prev.filter(v => v.id !== videoId));
-    setFollowingItems(prev => prev.filter(v => v.id !== videoId));
+    setForYouState(prev => ({ ...prev, items: prev.items.filter(v => v.id !== videoId) }));
+    setFollowingState(prev => ({ ...prev, items: prev.items.filter(v => v.id !== videoId) }));
   };
 
   const handleCategorySelect = (key: string | null) => {
     setSelectedCategory(key);
     setActive(0);
+    pagerRef.current?.setPageWithoutAnimation(0);
   };
 
+  const handleTabPress = useCallback((target: 1 | 2) => {
+    setTab(target);
+    setActive(0);
+    pagerRef.current?.setPageWithoutAnimation(0);
+    if (target === 2) loadForYouFirstPage();
+    else loadFollowingFirstPage();
+  }, [loadForYouFirstPage, loadFollowingFirstPage]);
+
   // Swipe horizontal sobre el header para cambiar tab
-  // setTab y setActive son estables (useState), seguros de capturar en useRef
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, g) =>
         Math.abs(g.dx) > 20 && Math.abs(g.dx) > Math.abs(g.dy),
       onPanResponderRelease: (_, g) => {
-        if (g.dx < -30) { setTab(2); setActive(0); }
-        if (g.dx > 30)  { setTab(1); setActive(0); }
+        if (g.dx < -30) handleTabPress(2);
+        if (g.dx > 30) handleTabPress(1);
       },
     }),
   ).current;
 
-  const forYouFeed = feedItems;
-  const followingFeed = followingItems;
+  const forYouFeed = forYouState.items;
+  const followingFeed = followingState.items;
 
   const activeFeed = tab === 1 ? followingFeed : forYouFeed;
   const isEmpty = activeFeed.length === 0;
+
+  const handlePageSelected = (e: { nativeEvent: { position: number } }) => {
+    const position = e.nativeEvent.position;
+    setActive(position);
+    if (activeFeed.length - position <= PREFETCH_THRESHOLD) {
+      if (tab === 2) loadForYouNextPage();
+      else loadFollowingNextPage();
+    }
+  };
 
   return (
     <Container>
@@ -94,11 +174,11 @@ const Home: React.FC = () => {
           <HeaderRow>
             {uiVisible && (
               <Header {...panResponder.panHandlers}>
-                <Tab onPress={() => { setTab(1); setActive(0); }}>
+                <Tab onPress={() => handleTabPress(1)}>
                   <Text active={tab === 1}>Siguiendo</Text>
                 </Tab>
                 <Separator>|</Separator>
-                <Tab onPress={() => { setTab(2); setActive(0); }}>
+                <Tab onPress={() => handleTabPress(2)}>
                   <Text active={tab === 2}>Para vos</Text>
                 </Tab>
               </Header>
@@ -144,13 +224,14 @@ const Home: React.FC = () => {
         </View>
       ) : (
         <PagerView
-          onPageSelected={e => setActive(e.nativeEvent.position)}
+          ref={pagerRef}
+          onPageSelected={handlePageSelected}
           orientation="vertical"
           style={{ flex: 1 }}
           initialPage={0}
         >
           {activeFeed.map((item, index) => (
-            <View key={item.id}>
+            <View key={`${item.id}-${index}`}>
               <Feed
                 item={item}
                 play={isFocused && index === active}

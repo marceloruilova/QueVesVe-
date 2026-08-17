@@ -183,6 +183,13 @@ export interface FeedItem {
   author_name: string;
 }
 
+export interface FeedPage {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: FeedItem[];
+}
+
 export interface UserSearchItem {
   id: number;
   username: string;
@@ -198,11 +205,17 @@ export interface CommentItem {
   created_at: string;
 }
 
-export async function getFeed(accessToken: string, category?: string): Promise<FeedItem[]> {
+export async function getFeed(
+  accessToken: string,
+  category?: string,
+  page = 1,
+): Promise<FeedPage> {
   let res: Response;
-  const url = category
-    ? `${API_BASE_URL}/videos/?category=${encodeURIComponent(category)}`
-    : `${API_BASE_URL}/videos/`;
+  const params = new URLSearchParams();
+  if (category) params.set('category', category);
+  if (page > 1) params.set('page', String(page));
+  const qs = params.toString();
+  const url = `${API_BASE_URL}/videos/${qs ? `?${qs}` : ''}`;
   try {
     res = await fetch(url, {
       headers: {
@@ -215,17 +228,18 @@ export async function getFeed(accessToken: string, category?: string): Promise<F
   }
   if (!res.ok) throw new Error('Failed to fetch feed');
   try {
-    const data = await res.json();
-    return data.results;
+    return await res.json();
   } catch {
     throw new Error('Error del servidor. Intentá de nuevo.');
   }
 }
 
-export async function getFollowingFeed(accessToken: string): Promise<FeedItem[]> {
+export async function getFollowingFeed(accessToken: string, page = 1): Promise<FeedPage> {
   let res: Response;
+  const params = new URLSearchParams({ following: 'true' });
+  if (page > 1) params.set('page', String(page));
   try {
-    res = await fetch(`${API_BASE_URL}/videos/?following=true`, {
+    res = await fetch(`${API_BASE_URL}/videos/?${params.toString()}`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
@@ -236,8 +250,7 @@ export async function getFollowingFeed(accessToken: string): Promise<FeedItem[]>
   }
   if (!res.ok) throw new Error('Failed to fetch following feed');
   try {
-    const data = await res.json();
-    return data.results;
+    return await res.json();
   } catch {
     throw new Error('Error del servidor. Intentá de nuevo.');
   }
@@ -635,6 +648,29 @@ export async function recordView(videoId: number, accessToken: string): Promise<
     });
   } catch {
     // silently ignore view tracking errors
+  }
+}
+
+export async function recordWatch(
+  videoId: number,
+  watchedSeconds: number,
+  durationSeconds: number | null,
+  accessToken: string,
+): Promise<void> {
+  try {
+    await fetch(`${API_BASE_URL}/videos/${videoId}/watch/`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        watched_seconds: watchedSeconds,
+        ...(durationSeconds != null ? { duration_seconds: durationSeconds } : {}),
+      }),
+    });
+  } catch {
+    // silently ignore watch tracking errors
   }
 }
 

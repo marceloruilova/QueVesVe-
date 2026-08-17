@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, act, waitFor } from '@testing-library/react-native';
 
 const mockGetFeed = jest.fn();
 const mockGetFollowingFeed = jest.fn();
@@ -30,9 +30,18 @@ jest.mock('@react-navigation/native', () => {
   };
 });
 
+let latestOnPageSelected: ((e: { nativeEvent: { position: number } }) => void) | undefined;
+const mockSetPageWithoutAnimation = jest.fn();
 jest.mock('react-native-pager-view', () => {
+  const ReactActual = require('react');
   const { View } = require('react-native');
-  return ({ children }: { children: React.ReactNode }) => <View>{children}</View>;
+  return ReactActual.forwardRef((props: any, ref: any) => {
+    latestOnPageSelected = props.onPageSelected;
+    ReactActual.useImperativeHandle(ref, () => ({
+      setPageWithoutAnimation: mockSetPageWithoutAnimation,
+    }));
+    return <View>{props.children}</View>;
+  });
 });
 
 // Mock del ítem de feed: expone el prop `play` calculado por Home para que
@@ -67,6 +76,13 @@ const feedItems = [
   },
 ];
 
+const page = (results: unknown[], next: string | null = null) => ({
+  count: results.length,
+  next,
+  previous: null,
+  results,
+});
+
 // Regresión: al cambiar de tab (Discover/Inbox/Me/Record) o abrir cualquier
 // pantalla encima, el tab Home seguía montado y el video activo del feed
 // seguía reproduciéndose (con audio) en segundo plano, porque `play` sólo
@@ -74,8 +90,8 @@ const feedItems = [
 describe('Home — pausa el video activo al perder el foco (cambio de tab)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetFeed.mockResolvedValue(feedItems);
-    mockGetFollowingFeed.mockResolvedValue([]);
+    mockGetFeed.mockResolvedValue(page(feedItems));
+    mockGetFollowingFeed.mockResolvedValue(page([]));
   });
 
   it('reproduce el video activo mientras la screen Home está enfocada', async () => {
@@ -103,8 +119,8 @@ describe('Home — pausa el video activo al perder el foco (cambio de tab)', () 
 describe('Home — botón para ocultar/mostrar tabs y categorías', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetFeed.mockResolvedValue(feedItems);
-    mockGetFollowingFeed.mockResolvedValue([]);
+    mockGetFeed.mockResolvedValue(page(feedItems));
+    mockGetFollowingFeed.mockResolvedValue(page([]));
     mockIsFocused.mockReturnValue(true);
   });
 
@@ -164,8 +180,8 @@ describe('Home — tab Siguiendo muestra los videos de las personas seguidas', (
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetFeed.mockResolvedValue(feedItems);
-    mockGetFollowingFeed.mockResolvedValue(followingItems);
+    mockGetFeed.mockResolvedValue(page(feedItems));
+    mockGetFollowingFeed.mockResolvedValue(page(followingItems));
     mockIsFocused.mockReturnValue(true);
   });
 
@@ -175,7 +191,93 @@ describe('Home — tab Siguiendo muestra los videos de las personas seguidas', (
 
     await fireEvent.press(getByText('Siguiendo'));
 
-    expect(mockGetFollowingFeed).toHaveBeenCalledWith('token-123');
+    expect(mockGetFollowingFeed).toHaveBeenCalledWith('token-123', 1);
     await findByTestId('feed-2');
+  });
+});
+
+// Nuevo: scroll infinito real. PagerView no expone onEndReached, así que
+// Home dispara el pedido de la próxima página desde onPageSelected cuando
+// la posición actual se acerca al final de la lista cargada.
+describe('Home — pide la página siguiente al acercarse al final del feed', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockIsFocused.mockReturnValue(true);
+    mockGetFollowingFeed.mockResolvedValue(page([]));
+  });
+
+  it('pide y agrega la página siguiente cuando el usuario se acerca al final', async () => {
+    mockGetFeed.mockResolvedValueOnce(page(feedItems, 'https://api/videos/?page=2'));
+    const secondPageItem = { ...feedItems[0], id: 3 };
+    mockGetFeed.mockResolvedValueOnce(page([secondPageItem], null));
+
+    const { findByTestId } = await render(<Home />);
+    await findByTestId('feed-1');
+
+    await act(async () => {
+      latestOnPageSelected?.({ nativeEvent: { position: 0 } });
+    });
+
+    await waitFor(() => expect(mockGetFeed).toHaveBeenCalledWith('token-123', undefined, 2));
+    await findByTestId('feed-3');
+  });
+});
+
+// Nuevo: tocar "Para vos" estando ya activo debe refrescar el feed y volver
+// al inicio del pager, en vez de no hacer nada (comportamiento anterior).
+describe('Home — tocar la pestaña activa refresca el feed y vuelve al inicio', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockIsFocused.mockReturnValue(true);
+    mockGetFollowingFeed.mockResolvedValue(page([]));
+    mockGetFeed.mockResolvedValue(page(feedItems));
+  });
+
+  it('vuelve a pedir la página 1 y resetea el pager a la posición 0', async () => {
+    const { findByTestId, getByText } = await render(<Home />);
+    await findByTestId('feed-1');
+
+    expect(mockGetFeed).toHaveBeenCalledTimes(1);
+
+    await fireEvent.press(getByText('Para vos'));
+
+    await waitFor(() => expect(mockGetFeed).toHaveBeenCalledTimes(2));
+    expect(mockSetPageWithoutAnimation).toHaveBeenCalledWith(0);
+  });
+});
+
+// Nuevo: cuando el mismo video aparece más de una vez en la lista (wraparound
+// del backend, o reciclado client-side de "Siguiendo"), las keys de React
+// deben seguir siendo únicas.
+describe('Home — soporta videos repetidos en el feed sin romper por keys duplicadas', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    mockIsFocused.mockReturnValue(true);
+    mockGetFollowingFeed.mockResolvedValue(page([]));
+  });
+
+  afterEach(() => {
+    (console.error as jest.Mock).mockRestore();
+  });
+
+  it('renderiza el mismo video dos veces cuando el backend recicla contenido', async () => {
+    mockGetFeed.mockResolvedValueOnce(page(feedItems, 'https://api/videos/?page=2'));
+    mockGetFeed.mockResolvedValueOnce(page(feedItems, null)); // wraparound: mismo id de nuevo
+
+    const { findByTestId, findAllByTestId } = await render(<Home />);
+    await findByTestId('feed-1');
+
+    await act(async () => {
+      latestOnPageSelected?.({ nativeEvent: { position: 0 } });
+    });
+
+    const repeated = await findAllByTestId('feed-1');
+    expect(repeated).toHaveLength(2);
+
+    const keyWarnings = (console.error as jest.Mock).mock.calls.filter(call =>
+      String(call[0]).toLowerCase().includes('key'),
+    );
+    expect(keyWarnings).toHaveLength(0);
   });
 });

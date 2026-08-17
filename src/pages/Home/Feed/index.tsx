@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Image,
   Animated,
@@ -18,13 +18,13 @@ import { FontAwesome, AntDesign } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import * as Clipboard from 'expo-clipboard';
-import { Video, ResizeMode } from 'expo-av';
+import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import * as Linking from 'expo-linking';
 import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
 
 import { useAuth } from '../../../contexts/AuthContext';
-import { toggleLike, recordView, followUser, unfollowUser, deleteVideo } from '../../../services/api';
+import { toggleLike, recordView, recordWatch, followUser, unfollowUser, deleteVideo } from '../../../services/api';
 import { RootStackParamList } from '../../../types/navigation';
 import CommentsModal from './CommentsModal';
 import EditVideoModal from './EditVideoModal';
@@ -103,6 +103,40 @@ const Feed: React.FC<Props> = ({ play, mountVideo, item, onDeleted }) => {
       setPaused(false);
     }
   }, [play]);
+
+  // Tracking de watch-time: alimenta VideoWatch en el backend, que es lo que
+  // el ranking usa para distinguir fresco/visto-y-gustó/deslizado-rápido al
+  // reciclar contenido (ver videos/feed_ranking.py). Se guarda en refs (no
+  // state) para no re-renderizar en cada frame de reproducción.
+  const watchedSecondsRef = useRef(0);
+  const durationSecondsRef = useRef<number | null>(null);
+  const lastFlushedSecondsRef = useRef<number | null>(null);
+  const prevPlayRef = useRef(play);
+
+  const handlePlaybackStatusUpdate = (status: AVPlaybackStatus) => {
+    if (!status.isLoaded) return;
+    watchedSecondsRef.current = status.positionMillis / 1000;
+    if (status.durationMillis) durationSecondsRef.current = status.durationMillis / 1000;
+  };
+
+  const flushWatch = useCallback(() => {
+    if (!accessToken) return;
+    const watched = watchedSecondsRef.current;
+    // Sin umbral mínimo: un watched_seconds bajo es justamente la señal que
+    // el backend usa para el bucket "deslizado rápido". Solo se descarta si
+    // nunca llegó a reproducir (uri null, o unmount antes del primer status).
+    if (watched <= 0) return;
+    if (lastFlushedSecondsRef.current === watched) return;
+    lastFlushedSecondsRef.current = watched;
+    recordWatch(item.id, watched, durationSecondsRef.current, accessToken);
+  }, [item.id, accessToken]);
+
+  useEffect(() => {
+    if (prevPlayRef.current && !play) flushWatch();
+    prevPlayRef.current = play;
+  }, [play, flushWatch]);
+
+  useEffect(() => () => flushWatch(), [flushWatch]);
 
   const isPlaying = play && !paused;
   const handleTogglePause = () => setPaused(prev => !prev);
@@ -220,6 +254,7 @@ const Feed: React.FC<Props> = ({ play, mountVideo, item, onDeleted }) => {
               resizeMode={ResizeMode.COVER}
               shouldPlay={isPlaying}
               isLooping
+              onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
               style={{
                 width: '100%',
                 height: '100%',

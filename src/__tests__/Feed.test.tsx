@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 import { act, fireEvent, render } from '@testing-library/react-native';
 
 const mockRecordView = jest.fn();
+const mockRecordWatch = jest.fn();
 const mockToggleLike = jest.fn();
 const mockUpdateVideo = jest.fn();
 const mockFollowUser = jest.fn();
@@ -11,6 +12,7 @@ const mockDeleteVideo = jest.fn();
 
 jest.mock('../services/api', () => ({
   recordView: (...args: unknown[]) => mockRecordView(...args),
+  recordWatch: (...args: unknown[]) => mockRecordWatch(...args),
   toggleLike: (...args: unknown[]) => mockToggleLike(...args),
   updateVideo: (...args: unknown[]) => mockUpdateVideo(...args),
   followUser: (...args: unknown[]) => mockFollowUser(...args),
@@ -30,14 +32,17 @@ jest.mock('@react-navigation/native', () => ({
 }));
 
 // Mock del reproductor: expone `shouldPlay` como prop legible por los tests
-// en vez de intentar simular reproducción real de video.
+// en vez de intentar simular reproducción real de video, y captura
+// `onPlaybackStatusUpdate` para que los tests puedan simular progreso.
+let latestStatusHandler: ((status: any) => void) | undefined;
 jest.mock('expo-av', () => {
   const { View } = require('react-native');
   return {
     __esModule: true,
-    Video: (props: { testID?: string; shouldPlay?: boolean }) => (
-      <View testID={props.testID} shouldPlay={props.shouldPlay} />
-    ),
+    Video: (props: { testID?: string; shouldPlay?: boolean; onPlaybackStatusUpdate?: (s: any) => void }) => {
+      latestStatusHandler = props.onPlaybackStatusUpdate;
+      return <View testID={props.testID} shouldPlay={props.shouldPlay} />;
+    },
     ResizeMode: { COVER: 'cover' },
   };
 });
@@ -318,5 +323,54 @@ describe('Feed — menú de opciones y eliminar video propio', () => {
 
     expect(mockDeleteVideo).not.toHaveBeenCalled();
     expect(onDeleted).not.toHaveBeenCalled();
+  });
+});
+
+// Nuevo: registro de watch-time. Alimenta VideoWatch en el backend, base del
+// ranking fresco/visto-y-gustó/deslizado-rápido al reciclar contenido.
+describe('Feed — registro de watch time', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUseAuth.mockReturnValue({ accessToken: 'token-123', user: null });
+    latestStatusHandler = undefined;
+  });
+
+  it('registra watch time cuando el video deja de estar activo', async () => {
+    const { rerender } = await render(<Feed item={baseItem} play mountVideo />);
+
+    latestStatusHandler?.({
+      isLoaded: true,
+      positionMillis: 4000,
+      durationMillis: 20000,
+    });
+
+    await rerender(<Feed item={baseItem} play={false} mountVideo />);
+
+    expect(mockRecordWatch).toHaveBeenCalledWith(1, 4, 20, 'token-123');
+  });
+
+  it('registra watch time al desmontarse el componente', async () => {
+    const { unmount } = await render(<Feed item={baseItem} play mountVideo />);
+
+    latestStatusHandler?.({
+      isLoaded: true,
+      positionMillis: 2500,
+      durationMillis: 15000,
+    });
+
+    await act(async () => {
+      unmount();
+      await Promise.resolve();
+    });
+
+    expect(mockRecordWatch).toHaveBeenCalledWith(1, 2.5, 15, 'token-123');
+  });
+
+  it('no registra watch time si nunca hubo progreso de reproducción', async () => {
+    const { rerender } = await render(<Feed item={baseItem} play mountVideo />);
+
+    await rerender(<Feed item={baseItem} play={false} mountVideo />);
+
+    expect(mockRecordWatch).not.toHaveBeenCalled();
   });
 });
